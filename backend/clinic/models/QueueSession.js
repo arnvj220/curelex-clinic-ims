@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // One session is created per patient token when SMS is sent
 const QueueSessionSchema = new mongoose.Schema({
@@ -30,4 +30,6 @@ const QueueSessionSchema = new mongoose.Schema({
 // Auto-delete expired sessions using MongoDB TTL index
 QueueSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-module.exports = mongoose.model('QueueSession', QueueSessionSchema);
+const QueueSession = mongoose.model('QueueSession', QueueSessionSchema);
+
+export default QueueSession;

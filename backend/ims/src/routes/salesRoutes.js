@@ -1,15 +1,15 @@
-const express = require("express");
-const {
+import express from 'express';
+import {
   listSales,
   createSaleTransaction,
   finalizeSaleTransaction,
   cancelDraftSale,
   downloadInvoicePdf
-} = require("../controllers/salesController");
-const { protect } = require("../middleware/authMiddleware");
-const validateRequest = require("../middleware/validateRequest");
-const { saleValidator } = require("../middleware/validators");
-const { authorizePermissions } = require("../middleware/authorize");
+} from "../controllers/salesController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import validateRequest from "../middleware/validateRequest.js";
+import { saleValidator } from "../middleware/validators.js";
+import { authorizePermissions } from "../middleware/authorize.js";
 
 const router = express.Router();
 
@@ -24,4 +24,4 @@ router.post("/",             authorizePermissions("sales.create"), saleValidator
 router.post("/:id/finalize", authorizePermissions("sales.create"), finalizeSaleTransaction);
 router.post("/:id/cancel",   authorizePermissions("sales.create"), cancelDraftSale);
 
-module.exports = router;
+export default router;

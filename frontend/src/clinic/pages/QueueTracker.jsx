@@ -215,7 +215,7 @@ function formatDate() {
 // ── Main QueueTracker component ───────────────────────────────────────────────
 export default function QueueTracker() {
   // Extract sessionToken from URL path: /track/:sessionToken
-  const sessionToken = window.location.pathname.split('/track/')[1]?.split('/')[0];
+  const sessionToken = window.location.pathname.split('/clinic/track/')[1]?.split('/')[0];
 
   const [initialData, setInitialData] = useState(null);
   const [fetchError,  setFetchError]  = useState(null);
@@ -229,7 +229,7 @@ export default function QueueTracker() {
       return;
     }
     try {
-      const res  = await fetch(`${API}/api/queue/track/${sessionToken}`);
+      const res  = await fetch(`${API}/api/clinic/queue/track/${sessionToken}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || 'Failed to load queue data.');
       setInitialData(json);

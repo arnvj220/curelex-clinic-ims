@@ -1,11 +1,15 @@
-const router  = require('express').Router();
-const bcrypt  = require('bcryptjs');
-const jwt     = require('jsonwebtoken');
-const Clinic  = require('../models/Clinic');
-const User    = require('../models/User');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import Clinic from '../models/Clinic.js';
+import User from '../models/User.js';
+import env from '../config/env.js';
+
+const router = express.Router();
+
 
 function sign(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 }
 
 // ── POST /api/auth/register  (Clinic self-registration) ─────────
@@ -40,12 +44,13 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { role, email, password } = req.body;
-
+    console.log(role,email,password);
+    console.log(env.superAdminEmail);
     // Super admin
     if (role === 'superadmin') {
       if (
-        email    === process.env.SUPER_ADMIN_EMAIL &&
-        password === process.env.SUPER_ADMIN_PASSWORD
+        email    === env.superAdminEmail &&
+        password === env.superAdminPassword
       ) {
         const token = sign({ id: 'superadmin', role: 'superadmin', clinicId: null });
         return res.json({ token, role: 'superadmin', clinicId: null });
@@ -83,4 +88,4 @@ router.post('/login', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

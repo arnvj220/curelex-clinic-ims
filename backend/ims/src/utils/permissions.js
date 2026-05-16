@@ -1,9 +1,9 @@
-const ROLES = {
+export const ROLES = {
   ADMIN: "admin",
   STAFF: "staff"
 };
 
-const STAFF_PERMISSIONS = {
+export const STAFF_PERMISSIONS = {
   SALES_BILLING: [
     "products.read",
     "sales.create",
@@ -14,7 +14,3 @@ const STAFF_PERMISSIONS = {
   ]
 };
 
-module.exports = {
-  ROLES,
-  STAFF_PERMISSIONS
-};

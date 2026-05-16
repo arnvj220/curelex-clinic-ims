@@ -22,8 +22,8 @@
 // module.exports = mongoose.model("Product", productSchema);
 
 
-const mongoose = require("mongoose");
-const env = require("../config/env");
+import mongoose from "mongoose";
+import env from "../config/env.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -53,4 +53,6 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ name: "text", sku: "text", category: "text" });
 
-module.exports = mongoose.model("Product", productSchema);
+const Product = mongoose.model("Product", productSchema);
+
+export default Product;

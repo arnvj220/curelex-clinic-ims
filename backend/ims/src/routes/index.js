@@ -1,12 +1,13 @@
-const express = require("express");
-const authRoutes = require("./authRoutes");
-const productRoutes = require("./productRoutes");
-const inventoryRoutes = require("./inventoryRoutes");
-const salesRoutes = require("./salesRoutes");
-const purchaseRoutes = require("./purchaseRoutes");
-const customerRoutes = require("./customerRoutes");
-const supplierRoutes = require("./supplierRoutes");
-const reportRoutes = require("./reportRoutes");
+import express from 'express';
+
+import authRoutes from "./authRoutes.js";
+import productRoutes from "./productRoutes.js";
+import inventoryRoutes from "./inventoryRoutes.js";
+import salesRoutes from "./salesRoutes.js";
+import purchaseRoutes from "./purchaseRoutes.js";
+import customerRoutes from "./customerRoutes.js";
+import supplierRoutes from "./supplierRoutes.js";
+import reportRoutes from "./reportRoutes.js";
 
 const router = express.Router();
 
@@ -19,4 +20,4 @@ router.use("/customers", customerRoutes);
 router.use("/suppliers", supplierRoutes);
 router.use("/reports", reportRoutes);
 
-module.exports = router;
+export default router;

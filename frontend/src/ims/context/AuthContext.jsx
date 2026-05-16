@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const bootstrap = async () => {
-      const token = localStorage.getItem("ims_token");
+      const token = localStorage.getItem("ims_token"); // Keep as ims_token
       if (!token) {
         setLoading(false);
         return;

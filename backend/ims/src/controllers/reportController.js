@@ -1,9 +1,9 @@
-const Sale = require("../models/Sale");
-const Product = require("../models/Product");
-const Inventory = require("../models/Inventory");
-const { Parser } = require("json2csv");
-const PDFDocument = require("pdfkit");
-const asyncHandler = require("../utils/asyncHandler");
+import Sale from "../models/Sale.js";
+import Product from "../models/Product.js";
+import Inventory from "../models/Inventory.js";
+import { Parser } from "json2csv";
+import PDFDocument from "pdfkit";
+import {asyncHandler} from "../utils/asyncHandler.js";
 
 // ── Helper: get date range for period ────────────────────────────────────────
 // Returns { fromDate, toDate } so each period is an exact window.
@@ -91,13 +91,13 @@ const computeSummary = async (period) => {
 };
 
 // ── GET /reports/dashboard ────────────────────────────────────────────────────
-const dashboardSummary = asyncHandler(async (req, res) => {
+export const dashboardSummary = asyncHandler(async (req, res) => {
   const summary = await computeSummary(req.query.period || "daily");
   res.json(summary);
 });
 
 // ── GET /reports/stock ────────────────────────────────────────────────────────
-const stockReport = asyncHandler(async (req, res) => {
+export const stockReport = asyncHandler(async (req, res) => {
   const inventory = await Inventory.find({}).populate("product", "name sku lowStockThreshold");
   const report = inventory.map((entry) => ({
     productName: entry.product?.name,
@@ -112,7 +112,7 @@ const stockReport = asyncHandler(async (req, res) => {
 });
 
 // ── GET /reports/movement ─────────────────────────────────────────────────────
-const movementReport = asyncHandler(async (req, res) => {
+export const movementReport = asyncHandler(async (req, res) => {
   const sales = await Sale.find({ status: "finalized" });
   const movementMap = new Map();
   sales.forEach((sale) => {
@@ -128,7 +128,7 @@ const movementReport = asyncHandler(async (req, res) => {
 });
 
 // ── GET /reports/sales/export.csv ────────────────────────────────────────────
-const exportSalesCsv = asyncHandler(async (req, res) => {
+export const exportSalesCsv = asyncHandler(async (req, res) => {
   const sales = await Sale.find({ status: "finalized" }).populate("customer", "name");
   const rows = sales.map((sale) => ({
     invoiceNo:      sale.invoiceNo,
@@ -194,7 +194,7 @@ const drawRow = (doc, values, colX, colW, idx, colorFn) => {
 };
 
 // ── GET /reports/download-pdf ─────────────────────────────────────────────────
-const downloadReportPdf = asyncHandler(async (req, res) => {
+export const downloadReportPdf = asyncHandler(async (req, res) => {
   const period = req.query.period || "daily";
   const periodLabel = period.charAt(0).toUpperCase() + period.slice(1);
   const generatedAt = new Date().toLocaleString("en-IN");
@@ -326,10 +326,3 @@ const downloadReportPdf = asyncHandler(async (req, res) => {
   doc.end();
 });
 
-module.exports = {
-  dashboardSummary,
-  stockReport,
-  movementReport,
-  exportSalesCsv,
-  downloadReportPdf
-};

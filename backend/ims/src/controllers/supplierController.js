@@ -1,6 +1,6 @@
-const Supplier = require("../models/Supplier");
-const Purchase = require("../models/Purchase");
-const asyncHandler = require("../utils/asyncHandler");
+import Supplier from "../models/Supplier.js";
+import Purchase from "../models/Purchase.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
 
 // GET /suppliers
 const listSuppliers = asyncHandler(async (req, res) => {
@@ -67,7 +67,7 @@ const recordPayment = asyncHandler(async (req, res) => {
   res.json({ message: "Payment recorded", supplier });
 });
 
-module.exports = {
+export {
   listSuppliers,
   createSupplier,
   updateSupplier,

@@ -5,11 +5,13 @@ const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="grid min-h-screen place-items-center">Loading...</div>;
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Save the attempted path for redirect after login
+    sessionStorage.setItem("ims_redirectPath", window.location.pathname);
+    return <Navigate to="/ims/login" replace />;
   }
 
   return children;

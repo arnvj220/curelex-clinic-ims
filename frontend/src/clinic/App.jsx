@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import LandingPage            from './pages/LandingPage';
 import SuperAdminDashboard    from './pages/SuperAdminDashboard';
@@ -8,9 +8,9 @@ import DoctorDashboard        from './pages/DoctorDashboard';
 import PlanSelection          from './pages/PlanSelection';
 import QueueTracker           from './pages/QueueTracker';
 
-// ── Public route check — /track/:token doesn't need login ────────────────────
+// ── Public route check — /clinic/track/:token doesn't need login ──
 function isTrackingPage() {
-  return window.location.pathname.startsWith('/track/');
+  return window.location.pathname.startsWith('/clinic/track/');
 }
 
 function Router() {
@@ -35,7 +35,7 @@ function Router() {
   }
 }
 
-export default function App() {
+export default function ClinicApp() {
   return (
     <AppProvider>
       <Router />

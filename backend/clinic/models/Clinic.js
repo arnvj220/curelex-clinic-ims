@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const getClinicDB = () => {
   if (!global.clinicDb) {
@@ -28,4 +28,6 @@ const ClinicSchema = new mongoose.Schema({
   createdAt: { type: String, default: () => new Date().toISOString().split('T')[0] },
 }, { timestamps: true });
 
-module.exports = mongoose.model('Clinic', ClinicSchema);
+const Clinic = mongoose.model('Clinic', ClinicSchema);
+
+export default Clinic;

@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Each day's schedule slot
 const DayScheduleSchema = new mongoose.Schema({
-  day:  { type: String, required: true }, // 'Monday', 'Tuesday', etc.
+  day:  { type: String, required: true },
   open: { type: Boolean, default: false },
-  from: { type: String, default: '09:00' }, // 24-hr "HH:MM"
-  to:   { type: String, default: '17:00' }, // 24-hr "HH:MM"
+  from: { type: String, default: '09:00' },
+  to:   { type: String, default: '17:00' },
 }, { _id: false });
 
 const UserSchema = new mongoose.Schema({
@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
   specialist: { type: String, default: '' },
   fee:        { type: Number, default: 0 },
 
-  // ── NEW: Daily token limit per doctor (0 = unlimited) ──────────
+  // Daily token limit
   dailyTokenLimit: { type: Number, default: 0, min: 0 },
 
   // Weekly schedule
@@ -44,4 +44,7 @@ const UserSchema = new mongoose.Schema({
 // Unique email per clinic
 UserSchema.index({ clinicId: 1, email: 1 }, { unique: true });
 
-module.exports = mongoose.model('User', UserSchema);
+// ✅ Prevent OverwriteModelError (VERY IMPORTANT for your merged project)
+const User = mongoose.models.User || mongoose.model('User', UserSchema);
+
+export default User;

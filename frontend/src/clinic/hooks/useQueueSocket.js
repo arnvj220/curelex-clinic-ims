@@ -1,22 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:5000';
+// Use relative path - Vite will proxy to backend
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '/';
 
 /**
  * useQueueSocket
- *
+ * 
  * Connects to the Socket.io server and listens for live queue updates.
- * Also polls the REST API on mount to get initial data immediately.
- *
- * @param {object} params
- * @param {string} params.sessionToken  - Public session token from SMS link
- * @param {string} params.clinicId      - Clinic ID (from initial REST fetch)
- * @param {string} params.doctorId      - Doctor ID (from initial REST fetch)
- * @param {string} params.date          - Date string "YYYY-MM-DD"
- * @param {number} params.myToken       - Patient's own token number
- *
- * @returns {object} { queueData, connected, error }
+ * Updated for merged setup - connects to same server as backend
  */
 export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken }) {
   const socketRef = useRef(null);
@@ -25,7 +17,6 @@ export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken
   const [error,      setError]      = useState(null);
   const [queueData,  setQueueData]  = useState(null);
 
-  // Derive patient-specific fields from raw queue snapshot
   const enrichQueueData = useCallback((raw, token) => {
     if (!raw) return null;
 
@@ -47,11 +38,12 @@ export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken
   useEffect(() => {
     if (!clinicId || !doctorId || !date || !myToken) return;
 
-    // ── Connect to Socket.io ──────────────────────────────────────
+    // Connect to Socket.io on the same server
     const socket = io(SOCKET_URL, {
       transports: ['websocket'],
       reconnectionAttempts: 10,
       reconnectionDelay:    2000,
+      path: '/socket.io', // Default path
     });
 
     socketRef.current = socket;
@@ -59,7 +51,7 @@ export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken
     socket.on('connect', () => {
       setConnected(true);
       setError(null);
-      console.log('🔌 Socket connected:', socket.id);
+      console.log('🔌 Clinic Socket connected:', socket.id);
 
       // Join the room for this specific doctor's queue
       socket.emit('join_queue', { clinicId, doctorId, date });
@@ -67,7 +59,7 @@ export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken
 
     socket.on('disconnect', () => {
       setConnected(false);
-      console.log('❌ Socket disconnected');
+      console.log('❌ Clinic Socket disconnected');
     });
 
     socket.on('connect_error', (err) => {
@@ -76,7 +68,6 @@ export function useQueueSocket({ sessionToken, clinicId, doctorId, date, myToken
       console.error('Socket error:', err.message);
     });
 
-    // ── Listen for queue updates broadcast by server ──────────────
     socket.on('queue_update', (raw) => {
       console.log('📡 queue_update received:', raw);
       setQueueData(enrichQueueData(raw, myToken));

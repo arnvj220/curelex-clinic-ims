@@ -1,10 +1,10 @@
-const PDFDocument = require("pdfkit");
-const jwt         = require("jsonwebtoken");
-const Sale        = require("../models/Sale");
-const asyncHandler = require("../utils/asyncHandler");
-const { createSale, finalizeSale } = require("../services/saleService");
-const { logAudit } = require("../services/auditService");
-const env = require("../config/env");
+import PDFDocument from "pdfkit";
+import jwt from "jsonwebtoken";
+import Sale from "../models/Sale.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
+import { createSale, finalizeSale } from "../services/saleService.js";
+import { logAudit } from "../services/auditService.js";
+import env from "../config/env.js";
 
 const listSales = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, status } = req.query;
@@ -261,7 +261,7 @@ const downloadInvoicePdf = asyncHandler(async (req, res) => {
   doc.end();
 });
 
-module.exports = {
+export {
   listSales,
   createSaleTransaction,
   finalizeSaleTransaction,

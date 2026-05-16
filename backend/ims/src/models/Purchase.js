@@ -25,7 +25,7 @@
 
 // module.exports = mongoose.model("Purchase", purchaseSchema);
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const purchaseItemSchema = new mongoose.Schema(
   {
@@ -75,4 +75,6 @@ const purchaseSchema = new mongoose.Schema(
 
 purchaseSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("Purchase", purchaseSchema);
+const Purchase = mongoose.model("Purchase", purchaseSchema);
+
+export default Purchase;

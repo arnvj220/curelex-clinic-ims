@@ -1,11 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-
-// Import the two systems
-const imsApp = require("./ims/app");
-const clinicApp = require("./clinic/app"); // We'll create this
+import 'dotenv/config.js';
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import imsApp from './ims/app.js';
+import clinicModule from './clinic/app.js';
 
 const mainApp = express();
 
@@ -34,4 +33,4 @@ mainApp.get("/health", (req, res) => {
   });
 });
 
-module.exports = mainApp;
+export default mainApp;

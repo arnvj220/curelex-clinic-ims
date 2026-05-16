@@ -1,10 +1,10 @@
-const express = require("express");
-const { listInventory, adjustInventory, lowStock } = require("../controllers/inventoryController");
-const { protect } = require("../middleware/authMiddleware");
-const { authorizeRoles } = require("../middleware/authorize");
-const { ROLES } = require("../utils/permissions");
-const validateRequest = require("../middleware/validateRequest");
-const { inventoryAdjustValidator } = require("../middleware/validators");
+import express from 'express';
+import { listInventory, adjustInventory, lowStock } from "../controllers/inventoryController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorizeRoles } from "../middleware/authorize.js";
+import { ROLES } from "../utils/permissions.js";
+import validateRequest from "../middleware/validateRequest.js";
+import { inventoryAdjustValidator } from "../middleware/validators.js";
 
 const router = express.Router();
 
@@ -13,4 +13,4 @@ router.get("/", listInventory);
 router.get("/low-stock", lowStock);
 router.post("/adjust", authorizeRoles(ROLES.ADMIN), inventoryAdjustValidator, validateRequest, adjustInventory);
 
-module.exports = router;
+export default router;

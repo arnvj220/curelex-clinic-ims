@@ -1,14 +1,18 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const asyncHandler = require("../utils/asyncHandler");
-const env = require("../config/env");
-const { STAFF_PERMISSIONS, ROLES } = require("../utils/permissions");
+import jwt from 'jsonwebtoken'
+
+import {asyncHandler} from '../utils/asyncHandler.js';
+import env from '../config/env.js'
+import { STAFF_PERMISSIONS, ROLES } from '../utils/permissions.js';
+import User from '../models/User.js';
+
+
+
 
 const signToken = (userId) =>
   jwt.sign({ id: userId }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 
 // POST /auth/signup
-const signup = asyncHandler(async (req, res) => {
+export const signup = asyncHandler(async (req, res) => {
   const { fullName, email, password, role } = req.body;
   const existing = await User.findOne({ email: email.toLowerCase() });
 
@@ -43,7 +47,7 @@ const signup = asyncHandler(async (req, res) => {
 });
 
 // POST /auth/login
-const login = asyncHandler(async (req, res) => {
+export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email: email.toLowerCase() });
 
@@ -70,8 +74,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 // GET /auth/me
-const me = asyncHandler(async (req, res) => {
+export const me = asyncHandler(async (req, res) => {
   res.json({ user: req.user });
 });
 
-module.exports = { signup, login, me };

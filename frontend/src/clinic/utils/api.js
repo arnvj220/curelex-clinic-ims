@@ -1,25 +1,26 @@
-// ── Curelex API Service ───────────────────────────────────────────────────────
-const BASE = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'http://localhost:5000/api';
+// ── Curelex API Service (Merged Version) ─────────────────────────────────────
+// Updated to use merged backend endpoint with /clinic prefix
+const BASE = import.meta.env.VITE_CLINIC_API_URL
+  ? `${import.meta.env.VITE_CLINIC_API_URL}`
+  : '/api/clinic';
 
-// ── Token / Session helpers ───────────────────────────────────────────────────
-export function getToken()      { return localStorage.getItem('cx_token'); }
-export function setToken(t)     { localStorage.setItem('cx_token', t); }
-export function removeToken()   { localStorage.removeItem('cx_token'); }
+// ── Token / Session helpers (using clinic_ prefix to avoid conflict with IMS) ──
+export function getToken()      { return localStorage.getItem('clinic_token'); }
+export function setToken(t)     { localStorage.setItem('clinic_token', t); }
+export function removeToken()   { localStorage.removeItem('clinic_token'); }
 
 export function getSession() {
-  try { return JSON.parse(localStorage.getItem('cx_session') || 'null'); }
+  try { return JSON.parse(localStorage.getItem('clinic_session') || 'null'); }
   catch { return null; }
 }
-export function setSession(s)   { localStorage.setItem('cx_session', JSON.stringify(s)); }
-export function removeSession() { localStorage.removeItem('cx_session'); }
+export function setSession(s)   { localStorage.setItem('clinic_session', JSON.stringify(s)); }
+export function removeSession() { localStorage.removeItem('clinic_session'); }
 
 // ── IST date/time helpers ─────────────────────────────────────────────────────
 function getTodayIST() {
   const now = new Date();
   const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
-  return ist.toISOString().split('T')[0]; // "YYYY-MM-DD"
+  return ist.toISOString().split('T')[0];
 }
 
 function getCurrentTimeIST() {
@@ -27,7 +28,7 @@ function getCurrentTimeIST() {
     hour:   '2-digit',
     minute: '2-digit',
     hour12: true,
-  }); // "09:30 AM"
+  });
 }
 
 // ── Base fetch ────────────────────────────────────────────────────────────────
@@ -133,21 +134,14 @@ export async function apiGetPatients(params = {}) {
   return request(`/patients${qs ? '?' + qs : ''}`);
 }
 
-// ✅ FIXED: auto-injects date + time + doctorName so backend never gets 400
 export async function apiAddPatient(patientData) {
-  // Find doctorName from doctorId if not already provided
   const payload = {
-    // ── required fields the backend checks ──
     name:      patientData.name,
     symptoms:  patientData.symptoms,
     doctorId:  patientData.doctorId,
-    doctorName: patientData.doctorName || patientData.doctorId, // fallback
-
-    // ── auto-fill date + time if not provided ──
+    doctorName: patientData.doctorName || patientData.doctorId,
     date: patientData.date || getTodayIST(),
     time: patientData.time || getCurrentTimeIST(),
-
-    // ── optional fields ──
     age:           patientData.age          || '',
     phone:         patientData.phone        || '',
     whatsapp:      patientData.whatsapp     || '',
@@ -201,12 +195,6 @@ export async function apiSuperSetPlan(clinicId, plan) {
 }
 
 // ── Queue / SMS ───────────────────────────────────────────────────────────────
-
-/**
- * Send SMS to patient with token + live tracking link
- * Called by receptionist after registering a patient
- * ✅ FIXED: removed duplicate /api in URL
- */
 export async function apiSendTokenSMS(patientId) {
   return request('/queue/send-sms', {
     method: 'POST',
@@ -214,10 +202,6 @@ export async function apiSendTokenSMS(patientId) {
   });
 }
 
-/**
- * Fetch public queue status — no auth needed
- * Used by QueueTracker page on initial load
- */
 export async function apiGetQueueStatus(sessionToken) {
   const res  = await fetch(`${BASE}/queue/track/${sessionToken}`);
   const data = await res.json();

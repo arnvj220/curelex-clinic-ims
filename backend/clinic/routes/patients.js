@@ -1,7 +1,9 @@
-const router  = require('express').Router();
-const Patient = require('../models/Patient');
-const User    = require('../models/User');
-const auth    = require('../middleware/auth');
+import express from 'express';
+import Patient from '../models/Patient.js';
+import User from '../models/User.js';
+import auth from '../middleware/auth.js';
+
+const router = express.Router();
 
 // ── Helper: emit live queue update to all patients in that room ───────────────
 // At the top of the file, modify broadcastQueueUpdate
@@ -200,4 +202,4 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

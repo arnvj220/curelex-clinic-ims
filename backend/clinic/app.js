@@ -1,6 +1,6 @@
-const express = require("express");
-const cors = require("cors");
-const connectClinicDB = require("./config/db");
+import express from 'express';
+import cors from 'cors';
+import connectClinicDB from './config/db.js';
 
 const app = express();
 
@@ -22,16 +22,23 @@ const initClinicDB = async () => {
 app.set('clinicDb', clinicDbConnection);
 
 // Routes (without /api prefix - we'll add in main app)
-app.use('/auth', require('./routes/auth'));
-app.use('/clinics', require('./routes/clinics'));
-app.use('/users', require('./routes/users'));
-app.use('/patients', require('./routes/patients'));
-app.use('/superadmin', require('./routes/superadmin'));
-app.use('/queue', require('./routes/queue'));
+import authRoutes from './routes/auth.js';
+import clinicRoutes from './routes/clinics.js';
+import userRoutes from './routes/users.js';
+import patientRoutes from './routes/patients.js';
+import superadminRoutes from './routes/superadmin.js';
+import queueRoutes from './routes/queue.js';
+
+app.use('/auth', authRoutes);
+app.use('/clinics', clinicRoutes);
+app.use('/users', userRoutes);
+app.use('/patients', patientRoutes);
+app.use('/superadmin', superadminRoutes);
+app.use('/queue', queueRoutes);
 
 // Health check for clinic system
 app.get('/health', (req, res) => {
   res.json({ status: 'Clinic system OK' });
 });
 
-module.exports = { app: app, initClinicDB };
+export default { app, initClinicDB };

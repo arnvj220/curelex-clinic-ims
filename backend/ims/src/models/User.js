@@ -1,6 +1,7 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const { ROLES, STAFF_PERMISSIONS } = require("../utils/permissions");
+import mongoose from 'mongoose'
+import bcrypt from 'bcryptjs'
+import { STAFF_PERMISSIONS, ROLES } from '../utils/permissions.js';
+
 
 const userSchema = new mongoose.Schema(
   {
@@ -51,4 +52,6 @@ userSchema.methods.comparePassword = function comparePassword(plainPassword) {
   return bcrypt.compare(plainPassword, this.password);
 };
 
-module.exports = mongoose.model("IMSUser", userSchema);
+const User = mongoose.model('IMSUser', userSchema);
+
+export default User;

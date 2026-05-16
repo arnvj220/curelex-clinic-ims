@@ -1,6 +1,6 @@
-const Inventory = require("../models/Inventory");
-const Product = require("../models/Product");
-const StockMovement = require("../models/StockMovement");
+import Inventory from "../models/Inventory.js";
+import Product from "../models/Product.js";
+import StockMovement from "../models/StockMovement.js";
 
 // In-memory low-stock event listeners (can be extended to email/SMS later)
 const lowStockListeners = [];
@@ -77,4 +77,4 @@ const changeStock = async ({
   return inventory;
 };
 
-module.exports = { changeStock, onLowStock };
+export { changeStock, onLowStock };

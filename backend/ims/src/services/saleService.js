@@ -1,10 +1,10 @@
-const Counter  = require("../models/Counter");
-const Product  = require("../models/Product");
-const Customer = require("../models/Customer");
-const Sale     = require("../models/Sale");
-const { buildInvoiceNumber } = require("../utils/invoiceNumber");
-const { calculateLine, calculateTotals } = require("../utils/gst");
-const { changeStock } = require("./inventoryService");
+import Counter from "../models/Counter.js";
+import Product from "../models/Product.js";
+import Customer from "../models/Customer.js";
+import Sale from "../models/Sale.js";
+import { buildInvoiceNumber } from "../utils/invoiceNumber.js";
+import { calculateLine, calculateTotals } from "../utils/gst.js";
+import { changeStock } from "./inventoryService.js";
 
 const nextInvoiceNumber = async () => {
   const year = new Date().getFullYear();
@@ -102,4 +102,4 @@ const finalizeSale = async ({ saleId, userId }) => {
   return sale;
 };
 
-module.exports = { createSale, finalizeSale };
+export { createSale, finalizeSale };

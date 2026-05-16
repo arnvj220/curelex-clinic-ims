@@ -1,4 +1,4 @@
-// const express = require("express");
+// import express from 'express';
 // const { dashboardSummary, stockReport, movementReport, exportSalesCsv } = require("../controllers/reportController");
 // const { protect } = require("../middleware/authMiddleware");
 
@@ -10,20 +10,20 @@
 // router.get("/movement", movementReport);
 // router.get("/sales/export.csv", exportSalesCsv);
 
-// module.exports = router;
+// export default router;
 
 
-const express = require("express");
-const jwt = require("jsonwebtoken");
-const {
+import express from 'express';
+import jwt from "jsonwebtoken";
+import {
   dashboardSummary,
   stockReport,
   movementReport,
   exportSalesCsv,
   downloadReportPdf
-} = require("../controllers/reportController");
-const { protect } = require("../middleware/authMiddleware");
-const env = require("../config/env");
+} from "../controllers/reportController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import env from "../config/env.js";
 
 const router = express.Router();
 
@@ -53,4 +53,4 @@ router.get("/download-pdf", (req, res, next) => {
   return res.status(401).json({ message: "Unauthorized" });
 }, downloadReportPdf);
 
-module.exports = router;
+export default router;

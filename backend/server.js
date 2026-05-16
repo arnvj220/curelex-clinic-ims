@@ -1,11 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-
-// Import systems
-const imsApp = require("./ims/app");
-const clinicModule = require("./clinic/app");
+import 'dotenv/config.js';
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import { Server } from 'socket.io';
+import imsApp from './ims/app.js';
+import clinicModule from './clinic/app.js';
 
 const mainApp = express();
 const server = http.createServer(mainApp);
@@ -78,7 +77,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     // Initialize IMS database
-    const connectIMS = require("./ims/src/config/db");
+    const { default: connectIMS } = await import('./ims/src/config/db.js');
     await connectIMS();
     console.log('✅ IMS Database connected');
     

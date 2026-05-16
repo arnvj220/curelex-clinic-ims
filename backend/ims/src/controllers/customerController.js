@@ -1,6 +1,6 @@
-const Customer = require("../models/Customer");
-const Sale = require("../models/Sale");
-const asyncHandler = require("../utils/asyncHandler");
+import Customer from "../models/Customer.js";
+import Sale from "../models/Sale.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
 
 // GET /customers
 const listCustomers = asyncHandler(async (req, res) => {
@@ -65,7 +65,7 @@ const clearDues = asyncHandler(async (req, res) => {
   res.json({ message: "Dues cleared", customer });
 });
 
-module.exports = {
+export {
   listCustomers,
   createCustomer,
   updateCustomer,

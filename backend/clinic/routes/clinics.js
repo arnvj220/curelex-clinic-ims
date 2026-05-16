@@ -1,6 +1,8 @@
-const router = require('express').Router();
-const Clinic = require('../models/Clinic');
-const auth   = require('../middleware/auth');
+import express from 'express';
+import Clinic from '../models/Clinic.js';
+import auth from '../middleware/auth.js';
+
+const router = express.Router();
 
 // ── GET /api/clinics/me  — get own clinic ────────────────────────
 router.get('/me', auth, async (req, res) => {
@@ -65,4 +67,4 @@ router.post('/activate-plan', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

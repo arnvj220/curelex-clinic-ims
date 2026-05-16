@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const stockMovementSchema = new mongoose.Schema(
   {
@@ -19,4 +19,6 @@ const stockMovementSchema = new mongoose.Schema(
 
 stockMovementSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("StockMovement", stockMovementSchema);
+const StockMovement = mongoose.model("StockMovement", stockMovementSchema);
+
+export default StockMovement;

@@ -93,12 +93,10 @@
 
 // module.exports = { listPurchases, createPurchase, updatePurchaseStatus };
 
-const Purchase = require("../models/Purchase");
-const Product = require("../models/Product");
-const asyncHandler = require("../utils/asyncHandler");
-const { changeStock } = require("../services/inventoryService");
-
-// GET /purchases
+import Purchase from "../models/Purchase.js";
+import Product from "../models/Product.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
+import { changeStock } from "../services/inventoryService.js";
 const listPurchases = asyncHandler(async (req, res) => {
   const purchases = await Purchase.find({})
     .populate("supplier", "name phone")
@@ -195,4 +193,4 @@ const updatePurchaseStatus = asyncHandler(async (req, res) => {
   res.json(purchase);
 });
 
-module.exports = { listPurchases, createPurchase, updatePurchaseStatus };
+export { listPurchases, createPurchase, updatePurchaseStatus };

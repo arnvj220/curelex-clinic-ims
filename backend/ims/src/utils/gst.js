@@ -22,7 +22,7 @@ const calculateTotals = ({ items, discountAmount = 0 }) => {
   return { subtotal, totalTax, grossTotal, totalDiscount, finalAmount };
 };
 
-module.exports = {
+export {
   calculateLine,
   calculateTotals
 };

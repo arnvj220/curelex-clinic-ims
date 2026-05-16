@@ -1,7 +1,3 @@
-const dotenv = require("dotenv");
-
-dotenv.config();
-
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
 
@@ -22,4 +18,4 @@ const env = {
   clientUrl: process.env.CLIENT_URL || "*"
 };
 
-module.exports = env;
+export default env;

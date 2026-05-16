@@ -1,4 +1,4 @@
-const https = require('https');
+import https from 'https';
 
 /**
  * Send SMS via Fast2SMS (Quick SMS — no DLT needed for testing)
@@ -14,7 +14,7 @@ const https = require('https');
  * @param {object} data   - { tokenNumber, patientName, doctorName, clinicName, sessionToken }
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
-async function sendTokenSMS(phone, data) {
+export async function sendTokenSMS(phone, data) {
   const { tokenNumber, patientName, doctorName, clinicName, sessionToken } = data;
 
   const baseUrl   = process.env.APP_BASE_URL || 'http://localhost:5173';
@@ -83,5 +83,3 @@ async function sendTokenSMS(phone, data) {
     req.end();
   });
 }
-
-module.exports = { sendTokenSMS };

@@ -1,7 +1,9 @@
-const router = require('express').Router();
-const bcrypt = require('bcryptjs');
-const User   = require('../models/User');
-const auth   = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import User from '../models/User.js';
+import auth from '../middleware/auth.js';
+
+const router = express.Router();
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
@@ -154,4 +156,4 @@ router.delete('/:id', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

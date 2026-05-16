@@ -1,8 +1,8 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
-const env = require("../config/env");
+import env from "../config/env.js";
+import jwt from 'jsonwebtoken'
+import User from "../models/User.js";
 
-const protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
@@ -25,4 +25,4 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+

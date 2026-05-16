@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const counterSchema = new mongoose.Schema(
   {
@@ -8,4 +8,6 @@ const counterSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Counter", counterSchema);
+const Counter = mongoose.model("Counter", counterSchema);
+
+export default Counter;

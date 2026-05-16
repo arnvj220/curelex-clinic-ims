@@ -116,6 +116,9 @@ const LoginPage = () => {
         await signup({ fullName: form.fullName, email: form.email, password: form.password });
       } else {
         await login({ email: form.email, password: form.password });
+        const redirectPath = sessionStorage.getItem("ims_redirectPath") || "/ims/dashboard";
+    sessionStorage.removeItem("ims_redirectPath");
+    window.location.href = redirectPath;
       }
     } catch (err) {
       setError(err?.response?.data?.message || "Something went wrong. Please try again.");

@@ -1,10 +1,10 @@
-const AuditLog = require("../models/AuditLog");
+import AuditLog from "../models/AuditLog.js";
 
-const logAudit = async ({ action, entityType, entityId, metadata, actor }) => {
+export const logAudit = async ({ action, entityType, entityId, metadata, actor }) => {
   await AuditLog.create({ action, entityType, entityId, metadata, actor });
 };
 
-const getAuditLogs = async ({ page = 1, limit = 20, entityType, action } = {}) => {
+export const getAuditLogs = async ({ page = 1, limit = 20, entityType, action } = {}) => {
   const filter = {};
   if (entityType) filter.entityType = entityType;
   if (action) filter.action = action;
@@ -22,4 +22,3 @@ const getAuditLogs = async ({ page = 1, limit = 20, entityType, action } = {}) =
   return { logs, total, page: Number(page), limit: Number(limit) };
 };
 
-module.exports = { logAudit, getAuditLogs };

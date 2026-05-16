@@ -1,8 +1,10 @@
-const router  = require('express').Router();
-const Clinic  = require('../models/Clinic');
-const User    = require('../models/User');
-const Patient = require('../models/Patient');
-const auth    = require('../middleware/auth');
+import express from 'express';
+import Clinic from '../models/Clinic.js';
+import User from '../models/User.js';
+import Patient from '../models/Patient.js';
+import auth from '../middleware/auth.js';
+
+const router = express.Router();
 
 function isSuperAdmin(req, res) {
   if (req.user.role !== 'superadmin') {
@@ -86,4 +88,4 @@ router.patch('/clinics/:id/plan', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

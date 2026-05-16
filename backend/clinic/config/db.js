@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import env from './env.js';
 
 const connectClinicDB = async () => {
   try {
-    const conn = await mongoose.createConnection(process.env.CLINIC_MONGO_URI || 'mongodb://127.0.0.1:27017/clinic_db');
+    const conn = await mongoose.createConnection(env.clinicMongoUri);
     console.log(`Clinic DB connected`);
     return conn;
   } catch (error) {
@@ -11,4 +12,4 @@ const connectClinicDB = async () => {
   }
 };
 
-module.exports = connectClinicDB;
+export default connectClinicDB;

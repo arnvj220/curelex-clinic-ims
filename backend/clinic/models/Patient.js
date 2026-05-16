@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const PatientSchema = new mongoose.Schema({
   clinicId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
@@ -28,4 +28,6 @@ const PatientSchema = new mongoose.Schema({
   followUpNote: { type: String, default: '' },  // optional note
 }, { timestamps: true });
 
-module.exports = mongoose.model('Patient', PatientSchema);
+const Patient = mongoose.model('Patient', PatientSchema);
+
+export default Patient;

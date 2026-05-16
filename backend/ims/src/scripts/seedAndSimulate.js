@@ -1,17 +1,17 @@
-const connectDb = require("../config/db");
-const User = require("../models/User");
-const Product = require("../models/Product");
-const Inventory = require("../models/Inventory");
-const Customer = require("../models/Customer");
-const Supplier = require("../models/Supplier");
-const Purchase = require("../models/Purchase");
-const Sale = require("../models/Sale");
-const StockMovement = require("../models/StockMovement");
-const AuditLog = require("../models/AuditLog");
-const Counter = require("../models/Counter");
-const { ROLES, STAFF_PERMISSIONS } = require("../utils/permissions");
-const { createSale, finalizeSale } = require("../services/saleService");
-const { changeStock } = require("../services/inventoryService");
+import connectDb from "../config/db.js";
+import User from "../models/User.js";
+import Product from "../models/Product.js";
+import Inventory from "../models/Inventory.js";
+import Customer from "../models/Customer.js";
+import Supplier from "../models/Supplier.js";
+import Purchase from "../models/Purchase.js";
+import Sale from "../models/Sale.js";
+import StockMovement from "../models/StockMovement.js";
+import AuditLog from "../models/AuditLog.js";
+import Counter from "../models/Counter.js";
+import { ROLES, STAFF_PERMISSIONS } from "../utils/permissions.js";
+import { createSale, finalizeSale } from "../services/saleService.js";
+import { changeStock } from "../services/inventoryService.js";
 
 const TOTAL = 25;
 

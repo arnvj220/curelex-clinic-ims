@@ -1,11 +1,13 @@
-const router       = require('express').Router();
-const crypto       = require('crypto');
-const auth         = require('../middleware/auth');
-const Patient      = require('../models/Patient');
-const Clinic       = require('../models/Clinic');
-const User         = require('../models/User');
-const QueueSession = require('../models/QueueSession');
-const { sendTokenSMS } = require('../utils/sms');
+import express from 'express';
+import crypto from 'crypto';
+import auth from '../middleware/auth.js';
+import Patient from '../models/Patient.js';
+import Clinic from '../models/Clinic.js';
+import User from '../models/User.js';
+import QueueSession from '../models/QueueSession.js';
+import { sendTokenSMS } from '../utils/sms.js';
+
+const router = express.Router();
 
 // ── Helper: generate secure random session token ──────────────────────────────
 function generateSessionToken() {
@@ -191,4 +193,4 @@ router.get('/live/:clinicId/:doctorId/:date', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
-const Inventory = require("../models/Inventory");
-const Product = require("../models/Product");
-const asyncHandler = require("../utils/asyncHandler");
-const { changeStock } = require("../services/inventoryService");
+import Inventory from "../models/Inventory.js";
+import Product from "../models/Product.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
+import { changeStock } from "../services/inventoryService.js";
 
 // GET /inventory
 const listInventory = asyncHandler(async (req, res) => {
@@ -66,4 +66,4 @@ const lowStock = asyncHandler(async (req, res) => {
   res.json({ data: docs, count: docs.length });
 });
 
-module.exports = { listInventory, adjustInventory, lowStock };
+export { listInventory, adjustInventory, lowStock };

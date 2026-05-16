@@ -44,7 +44,7 @@
 // module.exports = mongoose.model("Sale", saleSchema);
 
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const saleItemSchema = new mongoose.Schema(
   {
@@ -89,4 +89,6 @@ const saleSchema = new mongoose.Schema(
 
 saleSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("Sale", saleSchema);
+const Sale = mongoose.model("Sale", saleSchema);
+
+export default Sale;

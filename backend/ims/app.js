@@ -1,12 +1,12 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const cookieParser = require("cookie-parser");
-const rateLimit = require("express-rate-limit");
-const routes = require("./src/routes");
-const { notFound, errorHandler } = require("./src/middleware/errorHandler");
-const env = require("./src/config/env");
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import routes from './src/routes/index.js';
+import { notFound, errorHandler } from './src/middleware/errorHandler.js';
+import env from './src/config/env.js';
 
 const app = express();
 
@@ -46,4 +46,4 @@ app.use("/api/v1", routes);
 app.use(notFound);
 app.use(errorHandler);
 
-module.exports = app;
+export default app;
