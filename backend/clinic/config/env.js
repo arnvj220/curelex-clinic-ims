@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 
 dotenv.config();
-console.log(process.env.SUPER_ADMIN_EMAIL);
+
 
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
