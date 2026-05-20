@@ -537,6 +537,7 @@ export default function LandingPage() {
     { key: 'admin',        label: '🔐  Clinic Admin'  },
     { key: 'receptionist', label: '📋  Receptionist'  },
     { key: 'doctor',       label: '👨‍⚕️  Doctor'        },
+    { key: 'pharmacist',   label: '💊  Pharmacist'    },  
   ];
 
   return (

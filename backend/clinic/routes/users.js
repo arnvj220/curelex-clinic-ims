@@ -20,7 +20,7 @@ function sanitiseSchedule(raw) {
   });
 }
 
-// ── GET /api/users  — list doctors & receptionists for clinic ────
+// ── GET /api/users  — list doctors, receptionists & pharmacists for clinic ────
 router.get('/', auth, async (req, res) => {
   try {
     const allowedRoles = ['admin', 'receptionist'];
@@ -34,7 +34,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
-// ── GET /api/users/me  — fetch own user record (doctor/receptionist) ──
+// ── GET /api/users/me  — fetch own user record ──
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findOne({ _id: req.user.id, clinicId: req.user.clinicId }).sort({ createdAt: -1 }).select('-password');
@@ -45,7 +45,7 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// ── POST /api/users  — add doctor or receptionist ────────────────
+// ── POST /api/users  — add doctor, receptionist or pharmacist ────────────────
 router.post('/', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin')
@@ -56,7 +56,8 @@ router.post('/', auth, async (req, res) => {
     if (!name || !email || !password || !role)
       return res.status(400).json({ message: 'Fill all required fields.' });
 
-    if (!['doctor', 'receptionist'].includes(role))
+    // ✅ FIX: added 'pharmacist' to allowed roles
+    if (!['doctor', 'receptionist', 'pharmacist'].includes(role))
       return res.status(400).json({ message: 'Invalid role.' });
 
     const exists = await User.findOne({ clinicId: req.user.clinicId, email: email.toLowerCase() });

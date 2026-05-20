@@ -71,15 +71,40 @@ export async function apiLogin(role, email, password) {
     method: 'POST',
     body: JSON.stringify({ role, email, password }),
   });
+
   setToken(data.token);
   const clinicId = data.clinicId ? String(data.clinicId) : null;
-  setSession({ type: data.role, clinicId, user: data.clinic || data.user || null, token: data.token });
+
+  setSession({
+    type:     data.role,
+    clinicId,
+    user:     data.clinic || data.user || null,
+    token:    data.token,
+    email,                    // ← FIX: email store karo session mein
+    password,                 // ← FIX: password store karo session mein (IMS auto-login ke liye)
+    name:     data.clinic?.name || data.user?.name || data.user?.fullName || email,
+  });
+
+  // ── FIX: Agar pharmacist hai toh IMS login silently kar lo abhi hi ────────
+  if (data.role === 'pharmacist') {
+    try {
+      const { loginPharmacistIntoIMS } = await import('./imsAuthBridge');
+      await loginPharmacistIntoIMS({ email, password });
+      // Token store ho gaya — PharmacistDashboard seedha redirect karega
+    } catch (e) {
+      // Non-fatal — PharmacistDashboard pe retry hoga
+      console.warn('IMS pre-login failed:', e.message);
+    }
+  }
+
   return data;
 }
 
 export function apiLogout() {
   removeToken();
   removeSession();
+  // IMS token bhi clear karo logout par
+  localStorage.removeItem('ims_token');
 }
 
 // ── Clinic ────────────────────────────────────────────────────────────────────

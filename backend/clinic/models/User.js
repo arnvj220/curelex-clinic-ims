@@ -10,7 +10,7 @@ const DayScheduleSchema = new mongoose.Schema({
 
 const UserSchema = new mongoose.Schema({
   clinicId: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
-  role:     { type: String, enum: ['doctor', 'receptionist'], required: true },
+  role:     { type: String, enum: ['doctor', 'receptionist', 'pharmacist'], required: true },
 
   name:     { type: String, required: true },
   email:    { type: String, required: true, lowercase: true },

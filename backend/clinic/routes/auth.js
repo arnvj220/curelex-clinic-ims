@@ -7,7 +7,6 @@ import env from '../config/env.js';
 
 const router = express.Router();
 
-
 function sign(payload) {
   return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 }
@@ -44,7 +43,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { role, email, password } = req.body;
-    
+
     // Super admin
     if (role === 'superadmin') {
       if (
@@ -69,8 +68,8 @@ router.post('/login', async (req, res) => {
       return res.json({ token, role: 'admin', clinicId: clinic._id, clinic });
     }
 
-    // Doctor or Receptionist
-    if (role === 'doctor' || role === 'receptionist') {
+    // ✅ FIX: Doctor, Receptionist or Pharmacist
+    if (role === 'doctor' || role === 'receptionist' || role === 'pharmacist') {
       const user = await User.findOne({ email: email.toLowerCase(), role });
       if (!user) return res.status(401).json({ message: `Invalid ${role} credentials.` });
 

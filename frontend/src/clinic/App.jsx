@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import LandingPage            from './pages/LandingPage';
 import SuperAdminDashboard    from './pages/SuperAdminDashboard';
 import AdminDashboard         from './pages/AdminDashboard';
 import ReceptionistDashboard  from './pages/ReceptionistDashboard';
 import DoctorDashboard        from './pages/DoctorDashboard';
+import PharmacistDashboard    from './pages/PharmacistDashboard';
 import PlanSelection          from './pages/PlanSelection';
 import QueueTracker           from './pages/QueueTracker';
 
@@ -31,6 +32,7 @@ function Router() {
       return <AdminDashboard onChoosePlan={() => setChoosingPlan(true)} />;
     case 'receptionist': return <ReceptionistDashboard />;
     case 'doctor':       return <DoctorDashboard />;
+    case 'pharmacist':   return <PharmacistDashboard />;
     default:             return <LandingPage />;
   }
 }

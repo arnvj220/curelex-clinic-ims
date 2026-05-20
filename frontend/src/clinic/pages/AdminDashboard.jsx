@@ -25,7 +25,6 @@ function fmt24(t) {
 
 // ══════════════════════════════════════════════════════════════════════════════
 // COMPLETE INDIA — ALL 36 STATES & UTs + ALL DISTRICTS
-// Source: Census of India / Ministry of Home Affairs
 // ══════════════════════════════════════════════════════════════════════════════
 const INDIA_STATES_DISTRICTS = {
   "Andhra Pradesh": ["Alluri Sitharama Raju","Anakapalli","Ananthapuramu","Annamayya","Bapatla","Chittoor","Dr. B.R. Ambedkar Konaseema","East Godavari","Eluru","Guntur","Kakinada","Krishna","Kurnool","Nandyal","NTR","Palnadu","Parvathipuram Manyam","Prakasam","Sri Potti Sriramulu Nellore","Sri Sathya Sai","Srikakulam","Tirupati","Visakhapatnam","Vizianagaram","West Godavari","YSR Kadapa"],
@@ -56,7 +55,6 @@ const INDIA_STATES_DISTRICTS = {
   "Uttar Pradesh": ["Agra","Aligarh","Ambedkar Nagar","Amethi","Amroha","Auraiya","Ayodhya","Azamgarh","Badaun","Baghpat","Bahraich","Ballia","Balrampur","Banda","Barabanki","Bareilly","Basti","Bhadohi","Bijnor","Budaun","Bulandshahr","Chandauli","Chitrakoot","Deoria","Etah","Etawah","Farrukhabad","Fatehpur","Firozabad","Gautam Buddha Nagar","Ghaziabad","Ghazipur","Gonda","Gorakhpur","Hamirpur","Hapur","Hardoi","Hathras","Jalaun","Jaunpur","Jhansi","Kannauj","Kanpur Dehat","Kanpur Nagar","Kasganj","Kaushambi","Kheri","Kushinagar","Lalitpur","Lucknow","Maharajganj","Mahoba","Mainpuri","Mathura","Mau","Meerut","Mirzapur","Moradabad","Muzaffarnagar","Pilibhit","Pratapgarh","Prayagraj","Raebareli","Rampur","Saharanpur","Sambhal","Sant Kabir Nagar","Shahjahanpur","Shamli","Shravasti","Siddharthnagar","Sitapur","Sonbhadra","Sultanpur","Unnao","Varanasi"],
   "Uttarakhand": ["Almora","Bageshwar","Chamoli","Champawat","Dehradun","Haridwar","Nainital","Pauri Garhwal","Pithoragarh","Rudraprayag","Tehri Garhwal","Udham Singh Nagar","Uttarkashi"],
   "West Bengal": ["Alipurduar","Bankura","Birbhum","Cooch Behar","Dakshin Dinajpur","Darjeeling","Hooghly","Howrah","Jalpaiguri","Jhargram","Kalimpong","Kolkata","Malda","Murshidabad","Nadia","North 24 Parganas","Paschim Bardhaman","Paschim Medinipur","Purba Bardhaman","Purba Medinipur","Purulia","South 24 Parganas","Uttar Dinajpur"],
-  // Union Territories
   "Andaman and Nicobar Islands": ["Nicobar","North and Middle Andaman","South Andaman"],
   "Chandigarh": ["Chandigarh"],
   "Dadra and Nagar Haveli and Daman and Diu": ["Dadra and Nagar Haveli","Daman","Diu"],
@@ -103,7 +101,6 @@ function WeeklySchedulePicker({ value, onChange }) {
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>Weekly Availability</span>
         <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginLeft: 'auto' }}>{schedule.filter(s => s.open).length} days open</span>
       </div>
-
       {schedule.map((slot, idx) => {
         const isWeekend = slot.day === 'Saturday' || slot.day === 'Sunday';
         return (
@@ -117,14 +114,6 @@ function WeeklySchedulePicker({ value, onChange }) {
                 <input type="time" value={slot.from} onChange={(e) => setTime(idx, 'from', e.target.value)} style={{ padding: '4px 8px', borderRadius: 7, border: '1.5px solid #c5d5e8', fontSize: 13, color: '#0a3d62', fontWeight: 600, background: '#f4f8fc', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }} />
                 <span style={{ color: '#8fa8bc', fontSize: 12, fontWeight: 500 }}>to</span>
                 <input type="time" value={slot.to} onChange={(e) => setTime(idx, 'to', e.target.value)} style={{ padding: '4px 8px', borderRadius: 7, border: '1.5px solid #c5d5e8', fontSize: 13, color: '#0a3d62', fontWeight: 600, background: '#f4f8fc', cursor: 'pointer', outline: 'none', fontFamily: 'inherit' }} />
-                {slot.from && slot.to && (() => {
-                  const [fh, fm] = slot.from.split(':').map(Number);
-                  const [th, tm] = slot.to.split(':').map(Number);
-                  const mins = (th * 60 + tm) - (fh * 60 + fm);
-                  if (mins <= 0) return null;
-                  const h = Math.floor(mins / 60), m = mins % 60;
-                  return <span style={{ fontSize: 11, color: '#00a878', fontWeight: 600 }}>{h > 0 ? `${h}h` : ''}{m > 0 ? ` ${m}m` : ''}</span>;
-                })()}
               </div>
             ) : (
               <span style={{ color: '#b0bec5', fontSize: 12.5, fontStyle: 'italic', fontWeight: 500 }}>Closed</span>
@@ -132,20 +121,17 @@ function WeeklySchedulePicker({ value, onChange }) {
           </div>
         );
       })}
-
       <div style={{ padding: '9px 14px', borderTop: '1.5px solid #eef1f5', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: '#f7f9fc' }}>
         <span style={{ fontSize: 11.5, color: '#8fa8bc', fontWeight: 600, marginRight: 2 }}>Quick set:</span>
         {[
-          { label: 'Mon–Fri', days: ['Monday','Tuesday','Wednesday','Thursday','Friday'] },
-          { label: 'Mon–Sat', days: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] },
-          { label: 'Every day', days: DAYS },
-          { label: 'Clear all', days: [] },
+          { label: 'Mon–Fri',  days: ['Monday','Tuesday','Wednesday','Thursday','Friday'] },
+          { label: 'Mon–Sat',  days: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'] },
+          { label: 'Every day',days: DAYS },
+          { label: 'Clear all',days: [] },
         ].map(({ label, days }) => (
           <button key={label} type="button"
             onClick={() => onChange(schedule.map((s) => ({ ...s, open: days.includes(s.day) })))}
             style={{ padding: '3px 10px', borderRadius: 20, border: '1.5px solid #c5d5e8', background: '#fff', color: '#0a3d62', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-            onMouseEnter={(e) => { e.target.style.background = '#0a3d62'; e.target.style.color = '#fff'; }}
-            onMouseLeave={(e) => { e.target.style.background = '#fff'; e.target.style.color = '#0a3d62'; }}
           >{label}</button>
         ))}
       </div>
@@ -153,13 +139,12 @@ function WeeklySchedulePicker({ value, onChange }) {
   );
 }
 
-// ── Schedule display in DoctorCard ────────────────────────────────────────────
+// ── Schedule display ─────────────────────────────────────────────────────────
 function ScheduleDisplay({ schedule }) {
   const [expanded, setExpanded] = useState(false);
   if (!schedule || schedule.length === 0) return null;
   const openDays = schedule.filter((s) => s.open);
   if (openDays.length === 0) return <div style={{ color: '#8fa8bc', fontSize: 12.5 }}>📅 No available days</div>;
-
   return (
     <div>
       <button type="button" onClick={(e) => { e.stopPropagation(); setExpanded((p) => !p); }}
@@ -198,57 +183,34 @@ function TokenLimitEditor({ doc, onSave }) {
     const limit = parseInt(value, 10);
     if (isNaN(limit) || limit < 0) { setErr('Enter a valid number (0 = unlimited)'); return; }
     setBusy(true); setErr('');
-    try {
-      await onSave(doc._id, limit);
-      setEditing(false);
-    } catch (ex) {
-      setErr(ex.message);
-    } finally {
-      setBusy(false);
-    }
+    try { await onSave(doc._id, limit); setEditing(false); }
+    catch (ex) { setErr(ex.message); }
+    finally { setBusy(false); }
   }
 
   function cancel(e) { e.stopPropagation(); setEditing(false); setErr(''); setValue(String(doc.dailyTokenLimit ?? 0)); }
 
   const limit = doc.dailyTokenLimit ?? 0;
-
   return (
     <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 6 }}>
       {!editing ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12.5, color: limit === 0 ? '#8fa8bc' : '#0a3d62', fontWeight: limit === 0 ? 400 : 700 }}>
-            🎫 Daily limit:{' '}
-            <span style={{ color: limit === 0 ? '#00a878' : '#0a3d62', fontWeight: 700 }}>
-              {limit === 0 ? 'Unlimited' : limit}
-            </span>
+            🎫 Daily limit: <span style={{ color: limit === 0 ? '#00a878' : '#0a3d62', fontWeight: 700 }}>{limit === 0 ? 'Unlimited' : limit}</span>
           </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
-            style={{ fontSize: 11, color: '#1565a8', background: 'rgba(21,101,168,0.08)', border: '1px solid rgba(21,101,168,0.2)', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}
-          >Edit</button>
+          <button onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+            style={{ fontSize: 11, color: '#1565a8', background: 'rgba(21,101,168,0.08)', border: '1px solid rgba(21,101,168,0.2)', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit' }}>Edit</button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: '#4a6278', fontWeight: 600, whiteSpace: 'nowrap' }}>🎫 Daily limit:</span>
-            <input
-              type="number" min="0" value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              placeholder="0 = unlimited"
-              style={{ width: 100, padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13, fontWeight: 600, color: '#0a3d62', fontFamily: 'inherit', outline: 'none' }}
-            />
-            <button onClick={save} disabled={busy}
-              style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#00b894', color: '#fff', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-              {busy ? '…' : 'Save'}
-            </button>
-            <button onClick={cancel}
-              style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Cancel
-            </button>
+            <input type="number" min="0" value={value} onChange={(e) => setValue(e.target.value)} onClick={(e) => e.stopPropagation()} placeholder="0 = unlimited"
+              style={{ width: 100, padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13, fontWeight: 600, color: '#0a3d62', fontFamily: 'inherit', outline: 'none' }} />
+            <button onClick={save} disabled={busy} style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#00b894', color: '#fff', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{busy ? '…' : 'Save'}</button>
+            <button onClick={cancel} style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
           </div>
           {err && <div style={{ fontSize: 11.5, color: '#e74c3c', fontWeight: 600 }}>{err}</div>}
-          <div style={{ fontSize: 11, color: '#8fa8bc' }}>Set 0 for unlimited tokens per day</div>
         </div>
       )}
     </div>
@@ -259,32 +221,16 @@ function TokenLimitEditor({ doc, onSave }) {
 function PlanGateOverlay({ clinicName, onChoosePlan }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(8,25,50,0.60)', backdropFilter: 'blur(7px)' }}>
-      <div style={{ background: '#fff', borderRadius: 24, padding: '40px 36px', maxWidth: 420, width: '90%', textAlign: 'center', boxShadow: '0 32px 90px rgba(10,61,98,0.28)', position: 'relative', overflow: 'hidden', fontFamily: "'DM Sans','Segoe UI',system-ui,sans-serif" }}>
+      <div style={{ background: '#fff', borderRadius: 24, padding: '40px 36px', maxWidth: 420, width: '90%', textAlign: 'center', boxShadow: '0 32px 90px rgba(10,61,98,0.28)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position:'absolute',top:0,left:0,right:0,height:4, background:'linear-gradient(90deg,#0a3d62,#1565a8,#00b894)' }} />
         <div style={{ fontSize:54, marginBottom:14 }}>🔒</div>
-        <div style={{ fontFamily:'Georgia,serif',fontSize:24,fontWeight:700,color:'#0a3d62',marginBottom:10 }}>No Active Plan</div>
-        <div style={{ color:'#4a6278',fontSize:14,lineHeight:1.75,marginBottom:22 }}>
+        <div style={{ fontSize:24, fontWeight:700, color:'#0a3d62', marginBottom:10 }}>No Active Plan</div>
+        <div style={{ color:'#4a6278', fontSize:14, lineHeight:1.75, marginBottom:22 }}>
           <strong>{clinicName}</strong> doesn't have an active subscription.<br />Choose a plan to unlock your full dashboard.
         </div>
-        <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:26 }}>
-          {[
-            { name:'Basic', price:'Rs. 999/mo',  icon:'🏥', color:'#1565a8', bg:'rgba(21,101,168,0.07)' },
-            { name:'Pro',   price:'Rs. 2,999/mo', icon:'⭐', color:'#d68910', bg:'rgba(243,156,18,0.08)' },
-          ].map((p) => (
-            <div key={p.name} onClick={onChoosePlan}
-              style={{ background:p.bg, border:`1.5px solid ${p.color}28`, borderRadius:12, padding:'13px 10px', cursor:'pointer' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform='translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform='translateY(0)'}>
-              <div style={{ fontSize:22,marginBottom:4 }}>{p.icon}</div>
-              <div style={{ fontWeight:700,fontSize:14,color:p.color }}>{p.name}</div>
-              <div style={{ fontSize:12,color:'#8fa8bc',marginTop:2 }}>{p.price}</div>
-            </div>
-          ))}
-        </div>
-        <button onClick={onChoosePlan} style={{ width:'100%',padding:'14px 20px',borderRadius:11,border:'none',background:'linear-gradient(135deg,#00b894,#00cec9)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',boxShadow:'0 5px 18px rgba(0,184,148,0.32)',marginBottom:10 }}>
+        <button onClick={onChoosePlan} style={{ width:'100%', padding:'14px 20px', borderRadius:11, border:'none', background:'linear-gradient(135deg,#00b894,#00cec9)', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer' }}>
           🚀 Choose a Plan to Continue
         </button>
-        <div style={{ fontSize:12,color:'#8fa8bc' }}>No hidden fees · Cancel anytime</div>
       </div>
     </div>
   );
@@ -321,6 +267,7 @@ export default function AdminDashboard({ onChoosePlan }) {
   const todayStr      = new Date().toISOString().split('T')[0];
   const doctors       = users.filter((u) => u.role === 'doctor');
   const receptionists = users.filter((u) => u.role === 'receptionist');
+  const pharmacists   = users.filter((u) => u.role === 'pharmacist');
   const todayPatients = patients.filter((p) => p.date === todayStr);
   const paidTotal     = todayPatients.reduce((s, p) => s + (p.paid  || 0), 0);
   const duesTotal     = todayPatients.reduce((s, p) => s + (p.dues  || 0), 0);
@@ -381,6 +328,7 @@ export default function AdminDashboard({ onChoosePlan }) {
 
   const followUpPatients = patients.filter((p) => p.followUpDate && p.followUpDate >= todayStr);
 
+  // ── Nav items — Pharmacists is now between Settings and Logout ──
   const navItems = [
     { icon:'📊', label:'Overview',      active: tab==='overview',      onClick:()=>setTab('overview') },
     { icon:'👨‍⚕️', label:'Doctors',       active: tab==='doctors',       onClick:()=>setTab('doctors'),       badge: doctors.length || undefined },
@@ -388,6 +336,7 @@ export default function AdminDashboard({ onChoosePlan }) {
     { icon:'👥', label:'All Patients',  active: tab==='patients',      onClick:()=>setTab('patients') },
     { icon:'📅', label:'Follow-ups',    active: tab==='followups',     onClick:()=>setTab('followups'),     badge: followUpPatients.length || undefined },
     { icon:'⚙️', label:'Settings',      active: tab==='settings',      onClick:()=>setTab('settings') },
+    { icon:'💊', label:'Pharmacists',   active: tab==='pharmacists',   onClick:()=>setTab('pharmacists'),   badge: pharmacists.length || undefined },
   ];
 
   return (
@@ -409,6 +358,7 @@ export default function AdminDashboard({ onChoosePlan }) {
           {tab === 'patients'      && <AllPatients patients={patients} />}
           {tab === 'followups'     && <AdminFollowUps patients={patients} doctors={doctors} onUpdateFollowUp={handleUpdateFollowUp} />}
           {tab === 'settings'      && <ClinicSettings clinic={clinic} onSave={handleSaveClinic} />}
+          {tab === 'pharmacists'   && <PharmacistManagement pharmacists={pharmacists} onAdd={handleAddUser} onDelete={handleDeleteUser} />}
         </DashboardLayout>
       </div>
       {!active && <PlanGateOverlay clinicName={clinic.name} onChoosePlan={onChoosePlan} />}
@@ -505,7 +455,7 @@ function Overview({ clinic, doctors, todayPatients, paidTotal, duesTotal }) {
   );
 }
 
-/* ── Admin Follow-ups ─────────────────────────────────────────────────────── */
+/* ── Admin Follow-ups ─────────────────────────────────────────── */
 function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
   const todayStr = new Date().toISOString().split('T')[0];
   const [doctorFilter, setDoctorFilter] = useState('all');
@@ -517,12 +467,9 @@ function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
   const [busy,         setBusy]         = useState(false);
 
   const followUpPatients = patients.filter((p) => p.followUpDate);
-
   const filtered = followUpPatients.filter((p) => {
     const matchDoctor = doctorFilter === 'all' || String(p.doctorId) === doctorFilter;
-    const matchSearch = !search ||
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.phone && p.phone.includes(search));
+    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.phone && p.phone.includes(search));
     const matchDate =
       dateFilter === 'all'      ? true :
       dateFilter === 'today'    ? p.followUpDate === todayStr :
@@ -569,16 +516,15 @@ function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
           { label: 'All',      value: followUpPatients.length, icon: '📋', color: '#4a6278', bg: 'rgba(74,98,120,0.06)', border: 'rgba(74,98,120,0.15)', filter: 'all' },
         ].map((s) => (
           <div key={s.label} onClick={() => setDateFilter(s.filter)}
-            style={{ background: dateFilter === s.filter ? s.bg : '#fff', border: `1.5px solid ${dateFilter === s.filter ? s.border : 'var(--border, #e4eaf1)'}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}>
+            style={{ background: dateFilter === s.filter ? s.bg : '#fff', border: `1.5px solid ${dateFilter === s.filter ? s.border : 'var(--border, #e4eaf1)'}`, borderRadius: 12, padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 22 }}>{s.icon}</span>
             <div>
               <div style={{ fontWeight: 800, fontSize: 20, color: dateFilter === s.filter ? s.color : 'var(--text, #1a2a3a)', lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2, fontWeight: dateFilter === s.filter ? 700 : 500 }}>{s.label}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
             </div>
           </div>
         ))}
       </div>
-
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search patient name or phone…" style={{ flex: '1 1 200px', minWidth: 0 }} />
         <Select value={doctorFilter} onChange={(e) => setDoctorFilter(e.target.value)} style={{ flex: '0 0 180px' }}>
@@ -586,16 +532,15 @@ function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
           {doctors.map((d) => <option key={d._id} value={d._id}>{d.name}</option>)}
         </Select>
       </div>
-
       {filtered.length === 0 ? (
-        <Empty icon="📅" title="No follow-ups found" desc={dateFilter === 'overdue' ? 'No overdue follow-ups.' : dateFilter === 'today' ? 'No follow-ups scheduled for today.' : 'No follow-ups match your filters.'} />
+        <Empty icon="📅" title="No follow-ups found" desc="No follow-ups match your filters." />
       ) : (
         <Card noPad>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--surface2)' }}>
-                  {['Patient', 'Phone', 'Doctor', 'Last Visit', 'Follow-up Date', 'Note', 'Status', 'Actions'].map((h) => (
+                  {['Patient','Phone','Doctor','Last Visit','Follow-up Date','Note','Status','Actions'].map((h) => (
                     <th key={h} style={{ padding: '11px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
                   ))}
                 </tr>
@@ -607,62 +552,37 @@ function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
                   return (
                     <tr key={p._id} style={{ borderBottom: '1px solid var(--border)', background: isEditing ? 'rgba(21,101,168,0.03)' : (i % 2 === 0 ? '#fff' : 'var(--surface2, #fafbfc)') }}>
                       <td style={{ padding: '11px 14px' }}>
-                        <div style={{ fontWeight: 700, fontSize: 13.5 }}>{p.name}</div>
+                        <div style={{ fontWeight: 700 }}>{p.name}</div>
                         {p.age && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Age {p.age}{p.gender ? ` · ${p.gender}` : ''}</div>}
                       </td>
-                      <td style={{ padding: '11px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{p.phone || '—'}</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-muted)' }}>{p.phone || '—'}</td>
                       <td style={{ padding: '11px 14px' }}>
-                        <div style={{ fontWeight: 600, color: '#1565a8', fontSize: 13 }}>{p.doctorName}</div>
-                        {p.specialist && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.specialist}</div>}
+                        <div style={{ fontWeight: 600, color: '#1565a8' }}>{p.doctorName}</div>
                       </td>
-                      <td style={{ padding: '11px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: 12.5 }}>{p.date || '—'}</td>
-                      <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
-                        {isEditing ? (
-                          <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
-                            style={{ padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13, color: '#0a3d62', fontWeight: 600, fontFamily: 'inherit', outline: 'none' }} />
-                        ) : (
-                          <span style={{ fontWeight: 700, color: st?.text || 'var(--text)', fontSize: 13 }}>{p.followUpDate || '—'}</span>
-                        )}
+                      <td style={{ padding: '11px 14px', color: 'var(--text-muted)', fontSize: 12.5 }}>{p.date || '—'}</td>
+                      <td style={{ padding: '11px 14px' }}>
+                        {isEditing
+                          ? <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} style={{ padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13 }} />
+                          : <span style={{ fontWeight: 700, color: st?.text }}>{p.followUpDate}</span>}
                       </td>
                       <td style={{ padding: '11px 14px', maxWidth: 160 }}>
-                        {isEditing ? (
-                          <input type="text" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Note (optional)"
-                            style={{ width: '100%', padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
-                        ) : (
-                          <span style={{ color: p.followUpNote ? 'var(--text)' : 'var(--text-muted)', fontStyle: p.followUpNote ? 'normal' : 'italic', fontSize: 12.5, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {p.followUpNote || 'No note'}
-                          </span>
-                        )}
+                        {isEditing
+                          ? <input type="text" value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Note" style={{ width: '100%', padding: '4px 8px', borderRadius: 7, border: '1.5px solid #1565a8', fontSize: 13 }} />
+                          : <span style={{ color: p.followUpNote ? 'var(--text)' : 'var(--text-muted)', fontStyle: p.followUpNote ? 'normal' : 'italic', fontSize: 12.5 }}>{p.followUpNote || 'No note'}</span>}
                       </td>
                       <td style={{ padding: '11px 14px' }}>
-                        {st && (
-                          <span style={{ background: st.bg, color: st.text, border: `1px solid ${st.text}30`, borderRadius: 20, padding: '3px 10px', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                            {st.label === 'Overdue' ? '⚠️' : st.label === 'Today' ? '📅' : '🔮'} {st.label}
-                          </span>
-                        )}
+                        {st && <span style={{ background: st.bg, color: st.text, border: `1px solid ${st.text}30`, borderRadius: 20, padding: '3px 10px', fontSize: 11.5, fontWeight: 700 }}>{st.label}</span>}
                       </td>
-                      <td style={{ padding: '11px 14px', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '11px 14px' }}>
                         {isEditing ? (
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => saveEdit(p._id)} disabled={busy}
-                              style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#00b894', color: '#fff', fontSize: 12, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-                              {busy ? '…' : '✓ Save'}
-                            </button>
-                            <button onClick={cancelEdit}
-                              style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                              Cancel
-                            </button>
+                            <button onClick={() => saveEdit(p._id)} disabled={busy} style={{ padding: '4px 12px', borderRadius: 7, border: 'none', background: '#00b894', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>{busy ? '…' : '✓ Save'}</button>
+                            <button onClick={cancelEdit} style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <button onClick={() => startEdit(p)}
-                              style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(21,101,168,0.25)', background: 'rgba(21,101,168,0.06)', color: '#1565a8', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                              ✏️ Edit
-                            </button>
-                            <button onClick={() => clearFollowUp(p._id)}
-                              style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(231,76,60,0.25)', background: 'rgba(231,76,60,0.06)', color: '#e74c3c', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                              🗑
-                            </button>
+                            <button onClick={() => startEdit(p)} style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(21,101,168,0.25)', background: 'rgba(21,101,168,0.06)', color: '#1565a8', fontSize: 12, cursor: 'pointer' }}>✏️ Edit</button>
+                            <button onClick={() => clearFollowUp(p._id)} style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(231,76,60,0.25)', background: 'rgba(231,76,60,0.06)', color: '#e74c3c', fontSize: 12, cursor: 'pointer' }}>🗑</button>
                           </div>
                         )}
                       </td>
@@ -678,7 +598,7 @@ function AdminFollowUps({ patients, doctors, onUpdateFollowUp }) {
   );
 }
 
-/* ── Doctor Detail Modal ──────────────────────────────────────────────────── */
+/* ── Doctor Detail Modal ─────────────────────────────────────────────────── */
 function DoctorDetailModal({ doc, patients, onClose, onUpdateTokenLimit }) {
   const todayStr    = new Date().toISOString().split('T')[0];
   const allDocPat   = patients.filter((p) => String(p.doctorId) === String(doc._id));
@@ -695,95 +615,41 @@ function DoctorDetailModal({ doc, patients, onClose, onUpdateTokenLimit }) {
   return (
     <Modal title="" onClose={onClose}>
       <div style={{ background: 'linear-gradient(135deg, #0a3d62 0%, #1565a8 100%)', borderRadius: 14, padding: '20px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>👨‍⚕️</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ color: '#fff', fontWeight: 800, fontSize: 18, marginBottom: 3 }}>{doc.name}</div>
+        <div style={{ width: 56, height: 56, borderRadius: 14, background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>👨‍⚕️</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>{doc.name}</div>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>{doc.specialist}</div>
-          {doc.phone && <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 2 }}>📞 {doc.phone}</div>}
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginBottom: 2 }}>Consultation Fee</div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>Consultation Fee</div>
           <div style={{ color: '#f9ca24', fontWeight: 800, fontSize: 20 }}>Rs. {doc.fee || 0}</div>
         </div>
       </div>
-
-      <div style={{ background: limit > 0 ? 'rgba(21,101,168,0.06)' : 'rgba(0,184,148,0.06)', border: `1.5px solid ${limit > 0 ? 'rgba(21,101,168,0.18)' : 'rgba(0,184,148,0.18)'}`, borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>🎫 Daily Token Limit</div>
-        <TokenLimitEditor doc={doc} onSave={onUpdateTokenLimit} />
-        {limit > 0 && (
-          <div style={{ marginTop: 8, fontSize: 12, color: '#4a6278' }}>
-            Today: <strong style={{ color: todayDocPat.length >= limit ? '#e74c3c' : '#00a878' }}>{todayDocPat.length}/{limit}</strong> tokens used
-            {todayDocPat.length >= limit && <span style={{ color: '#e74c3c', fontWeight: 700, marginLeft: 8 }}>🚫 Limit reached</span>}
-          </div>
-        )}
-      </div>
-
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>📆 Today's Summary</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>
-          {[
-            { label: 'Waiting', value: waiting, icon: '⏳', color: '#1565a8', bg: 'rgba(21,101,168,0.08)' },
-            { label: 'In Room', value: called,  icon: '📢', color: '#d68910', bg: 'rgba(243,156,18,0.10)' },
-            { label: 'Done',    value: done,    icon: '✅', color: '#00a878', bg: 'rgba(0,184,148,0.08)'  },
-          ].map(({ label, value, icon, color, bg }) => (
-            <div key={label} style={{ background: bg, borderRadius: 10, padding: '12px 10px', textAlign: 'center' }}>
-              <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
-              <div style={{ fontWeight: 800, fontSize: 22, color, lineHeight: 1 }}>{value}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{label}</div>
-            </div>
-          ))}
+        <TokenLimitEditor doc={doc} onSave={onUpdateTokenLimit} />
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+        {[
+          { label: 'Waiting', value: waiting, color: '#1565a8' },
+          { label: 'In Room', value: called,  color: '#d68910' },
+          { label: 'Done',    value: done,    color: '#00a878' },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ background: '#f7f9fc', borderRadius: 10, padding: '12px 10px', textAlign: 'center' }}>
+            <div style={{ fontWeight: 800, fontSize: 22, color }}>{value}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+        <div style={{ flex: 1, background: 'rgba(0,184,148,0.07)', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontWeight: 800, color: '#00a878' }}>Rs. {revenue.toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Today's Revenue</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {[
-            { label: "Today's Revenue", value: `Rs. ${revenue.toLocaleString()}`, icon: '💰', color: '#00a878', bg: 'rgba(0,184,148,0.07)' },
-            { label: "Today's Dues",    value: `Rs. ${dues.toLocaleString()}`,    icon: '⚠️', color: '#e74c3c', bg: 'rgba(231,76,60,0.07)'  },
-          ].map(({ label, value, icon, color, bg }) => (
-            <div key={label} style={{ background: bg, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 16, color }}>{value}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{label}</div>
-              </div>
-            </div>
-          ))}
+        <div style={{ flex: 1, background: 'rgba(231,76,60,0.07)', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontWeight: 800, color: '#e74c3c' }}>Rs. {dues.toLocaleString()}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Today's Dues</div>
         </div>
       </div>
-
-      <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: '11px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
-        <span style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600 }}>📊 All-time: {allDocPat.length} patients</span>
-        <span style={{ fontSize: 12.5, color: '#00a878', fontWeight: 700 }}>💰 Rs. {totalRev.toLocaleString()} collected</span>
-        <span style={{ fontSize: 12.5, color: '#e74c3c', fontWeight: 700 }}>⚠️ Rs. {totalDue.toLocaleString()} dues</span>
-      </div>
-
-      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>🎫 Today's Tokens ({todayDocPat.length})</div>
-      {todayDocPat.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '28px 0', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🪑</div>
-          <div style={{ fontSize: 14 }}>No patients assigned today</div>
-        </div>
-      ) : (
-        <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
-          {todayDocPat.map((p, i) => (
-            <div key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderBottom: i < todayDocPat.length - 1 ? '1px solid var(--border)' : 'none', background: p.status === 'called' ? '#fefce8' : p.status === 'done' ? 'var(--surface2)' : '#fff' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, background: p.status === 'done' ? '#e8f5e9' : p.status === 'called' ? '#fff8e1' : 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: p.status === 'done' ? '#2e7d32' : p.status === 'called' ? '#f57f17' : 'var(--primary)' }}>
-                {p.token}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 14, color: p.status === 'done' ? 'var(--text-muted)' : 'var(--text)', textDecoration: p.status === 'done' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.symptoms} · 🕐 {p.time}</div>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 12, color: '#00a878', fontWeight: 700 }}>+Rs.{p.paid || 0}</div>
-                {p.dues > 0 && <div style={{ fontSize: 11, color: '#e74c3c', fontWeight: 600 }}>⚠️ Rs.{p.dues}</div>}
-                <div style={{ marginTop: 4 }}><PaymentBadge method={p.paymentMethod} /></div>
-              </div>
-              <Badge color={p.status === 'called' ? 'yellow' : p.status === 'done' ? 'gray' : 'blue'}>
-                {p.status === 'waiting' ? '⏳' : p.status === 'called' ? '📢' : '✓'}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      )}
     </Modal>
   );
 }
@@ -852,10 +718,7 @@ function DoctorManagement({ doctors, patients, onAdd, onDelete, onUpdateTokenLim
               <Input label="Phone" value={form.phone} onChange={(e) => f('phone', e.target.value)} placeholder="03xx-xxxxxxx" />
               <Input label="Consultation Fee (Rs.)" type="number" value={form.fee} onChange={(e) => f('fee', e.target.value)} placeholder="500" />
             </div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:600, color:'var(--text-muted)', marginBottom:7 }}>Weekly Availability</div>
-              <WeeklySchedulePicker value={form.schedule} onChange={(s) => f('schedule', s)} />
-            </div>
+            <WeeklySchedulePicker value={form.schedule} onChange={(s) => f('schedule', s)} />
             {err && <Alert type="error">{err}</Alert>}
             <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
               <Btn variant="ghost" onClick={() => { setShow(false); setErr(''); }}>Cancel</Btn>
@@ -875,34 +738,21 @@ function DoctorCard({ doc, onRemove, onClick, onUpdateTokenLimit }) {
   return (
     <div role="button" tabIndex={0} onClick={onClick} onKeyDown={(e) => e.key === 'Enter' && onClick()}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      style={{ background: '#fff', borderRadius: 14, border: hovered ? '1.5px solid #1565a8' : '1.5px solid var(--border, #e4eaf1)', padding: '16px 16px 14px', cursor: 'pointer', position: 'relative', transition: 'transform 0.15s, box-shadow 0.15s, border-color 0.15s', transform: hovered ? 'translateY(-3px)' : 'translateY(0)', boxShadow: hovered ? '0 8px 28px rgba(10,61,98,0.14)' : '0 1px 4px rgba(0,0,0,0.06)', userSelect: 'none' }}>
-      {hovered && (
-        <div style={{ position: 'absolute', top: -1, left: 0, right: 0, background: 'linear-gradient(90deg,#0a3d62,#1565a8)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '4px 0', borderRadius: '12px 12px 0 0', textAlign: 'center', letterSpacing: 0.3, pointerEvents: 'none', zIndex: 1 }}>
-          👁 Click to view full details
-        </div>
-      )}
-      <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:12, marginTop: hovered ? 18 : 0, transition:'margin-top 0.15s' }}>
-        <div style={{ width:48, height:48, borderRadius:12, background:'var(--primary-light, rgba(21,101,168,0.10))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>👨‍⚕️</div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontWeight:700, fontSize:15, marginBottom:4, color: hovered ? '#1565a8' : 'var(--text, #1a2a3a)', textDecoration: hovered ? 'underline' : 'none', transition: 'color 0.15s' }}>{doc.name}</div>
+      style={{ background: '#fff', borderRadius: 14, border: hovered ? '1.5px solid #1565a8' : '1.5px solid var(--border)', padding: '16px 16px 14px', cursor: 'pointer', position: 'relative', transition: 'transform 0.15s, box-shadow 0.15s', transform: hovered ? 'translateY(-3px)' : 'translateY(0)', boxShadow: hovered ? '0 8px 28px rgba(10,61,98,0.14)' : '0 1px 4px rgba(0,0,0,0.06)' }}>
+      <div style={{ display:'flex', alignItems:'flex-start', gap:12, marginBottom:12 }}>
+        <div style={{ width:48, height:48, borderRadius:12, background:'var(--primary-light)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>👨‍⚕️</div>
+        <div style={{ flex:1 }}>
+          <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>{doc.name}</div>
           <Badge color="blue">{doc.specialist}</Badge>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onRemove(e); }} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--danger,#e74c3c)', fontSize:16, padding:4, flexShrink:0, lineHeight:1 }} title="Remove doctor">🗑</button>
+        <button onClick={(e) => { e.stopPropagation(); onRemove(e); }} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:16, padding:4 }}>🗑</button>
       </div>
       <div style={{ display:'grid', gap:6, fontSize:13 }}>
-        {doc.phone && <div style={{ color:'var(--text-muted,#6b8299)' }}>📞 {doc.phone}</div>}
-        {doc.email && <div style={{ color:'var(--text-muted,#6b8299)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>✉️ {doc.email}</div>}
-        {doc.fee   && <div style={{ color:'var(--text-muted,#6b8299)' }}>💰 Rs. {doc.fee} per consultation</div>}
-        <div style={{ background: limit > 0 ? 'rgba(21,101,168,0.06)' : 'rgba(0,184,148,0.05)', border: `1px solid ${limit > 0 ? 'rgba(21,101,168,0.15)' : 'rgba(0,184,148,0.15)'}`, borderRadius: 8, padding: '7px 10px', marginTop: 2 }}>
-          <TokenLimitEditor doc={doc} onSave={onUpdateTokenLimit} />
-        </div>
+        {doc.phone && <div style={{ color:'var(--text-muted)' }}>📞 {doc.phone}</div>}
+        {doc.email && <div style={{ color:'var(--text-muted)' }}>✉️ {doc.email}</div>}
+        {doc.fee   && <div style={{ color:'var(--text-muted)' }}>💰 Rs. {doc.fee} per consultation</div>}
+        <TokenLimitEditor doc={doc} onSave={onUpdateTokenLimit} />
         <ScheduleDisplay schedule={doc.schedule} />
-      </div>
-      <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid var(--border,#e4eaf1)', fontSize:12, color:'var(--text-light,#9ab0c4)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <span>Added {doc.addedAt}</span>
-        <span style={{ color: hovered ? '#1565a8' : 'var(--text-light,#9ab0c4)', fontWeight: hovered ? 600 : 400, fontSize:11, transition:'color 0.15s' }}>
-          {hovered ? 'View details →' : `Login: ${doc.email}`}
-        </span>
       </div>
     </div>
   );
@@ -942,18 +792,17 @@ function ReceptionistManagement({ receptionists, onAdd, onDelete }) {
           {receptionists.map((rec) => (
             <Card key={rec._id}>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-                <div style={{ width:44,height:44,borderRadius:22,background:'var(--accent-light)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0 }}>📋</div>
+                <div style={{ width:44, height:44, borderRadius:22, background:'var(--accent-light)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20 }}>📋</div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontWeight:700, fontSize:15 }}>{rec.name}</div>
                   <div style={{ fontSize:12, color:'var(--text-muted)' }}>Receptionist</div>
                 </div>
-                <button onClick={() => removeRec(rec._id)} style={{ background:'none',border:'none',cursor:'pointer',color:'var(--danger)',fontSize:16,padding:4 }}>🗑</button>
+                <button onClick={() => removeRec(rec._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:16 }}>🗑</button>
               </div>
-              <div style={{ fontSize:13, display:'grid', gap:4 }}>
+              <div style={{ fontSize:13 }}>
                 <div style={{ color:'var(--text-muted)' }}>✉️ {rec.email}</div>
-                {rec.phone && <div style={{ color:'var(--text-muted)' }}>📞 {rec.phone}</div>}
+                {rec.phone && <div style={{ color:'var(--text-muted)', marginTop:4 }}>📞 {rec.phone}</div>}
               </div>
-              <div style={{ marginTop:10, paddingTop:8, borderTop:'1px solid var(--border)', fontSize:12, color:'var(--text-light)' }}>Added {rec.addedAt}</div>
             </Card>
           ))}
         </div>
@@ -971,6 +820,168 @@ function ReceptionistManagement({ receptionists, onAdd, onDelete }) {
             <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
               <Btn variant="ghost" onClick={() => { setShow(false); setErr(''); }}>Cancel</Btn>
               <Btn onClick={addRec} disabled={busy}>{busy ? 'Adding…' : 'Add Receptionist'}</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ── PHARMACIST MANAGEMENT (NEW) ──────────────────────────────────
+   ══════════════════════════════════════════════════════════════════ */
+function PharmacistManagement({ pharmacists, onAdd, onDelete }) {
+  const [show, setShow] = useState(false);
+  const [err,  setErr]  = useState('');
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ name:'', email:'', phone:'', password:'' });
+  const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  async function addPharmacist() {
+    if (!form.name || !form.email || !form.password) { setErr('Fill all required fields.'); return; }
+    setBusy(true); setErr('');
+    try {
+      await onAdd({ role: 'pharmacist', ...form });
+      setForm({ name:'', email:'', phone:'', password:'' });
+      setShow(false);
+    } catch(e) { setErr(e.message); }
+    finally { setBusy(false); }
+  }
+
+  async function removePharmacist(id) {
+    if (!window.confirm('Remove this pharmacist?')) return;
+    try { await onDelete(id); } catch(e) { alert(e.message); }
+  }
+
+  return (
+    <div>
+      <SectionHeader
+        title="Pharmacists"
+        subtitle={`${pharmacists.length} pharmacist${pharmacists.length !== 1 ? 's' : ''} registered`}
+        action={<Btn onClick={() => setShow(true)}>+ Add Pharmacist</Btn>}
+      />
+
+      {/* IMS info banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(10,61,98,0.06) 0%, rgba(0,184,148,0.08) 100%)',
+        border: '1.5px solid rgba(0,184,148,0.25)',
+        borderRadius: 14, padding: '16px 20px', marginBottom: 24,
+        display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+      }}>
+        <div style={{ fontSize: 36 }}>💊</div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#0a3d62', marginBottom: 4 }}>
+            Pharmacy &amp; Inventory System
+          </div>
+          <div style={{ fontSize: 13, color: '#4a6278', lineHeight: 1.6 }}>
+            Pharmacists log in and are automatically redirected to the Inventory Management System
+            where they can manage medicines, stock, sales, and purchases.
+          </div>
+        </div>
+        <a
+          href="/ims"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 10,
+            background: 'linear-gradient(135deg, #0a3d62, #1565a8)',
+            color: '#fff', fontWeight: 700, fontSize: 13,
+            textDecoration: 'none', whiteSpace: 'nowrap',
+            boxShadow: '0 4px 14px rgba(10,61,98,0.25)',
+          }}
+        >
+          📦 Open Inventory System ↗
+        </a>
+      </div>
+
+      {pharmacists.length === 0 ? (
+        <Empty
+          icon="💊"
+          title="No pharmacists yet"
+          desc="Add a pharmacist — they will have access to the Inventory Management System."
+          action={<Btn onClick={() => setShow(true)}>+ Add First Pharmacist</Btn>}
+        />
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
+          {pharmacists.map((ph) => (
+            <Card key={ph._id}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+                <div style={{
+                  width:44, height:44, borderRadius:12,
+                  background: 'linear-gradient(135deg, rgba(0,184,148,0.15), rgba(0,184,148,0.08))',
+                  border: '1.5px solid rgba(0,184,148,0.25)',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, flexShrink:0,
+                }}>💊</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:15 }}>{ph.name}</div>
+                  <span style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: 'rgba(0,184,148,0.10)', color: '#00a878',
+                    border: '1px solid rgba(0,184,148,0.25)', borderRadius: 20,
+                    padding: '1px 9px', fontSize: 11, fontWeight: 700, marginTop: 2,
+                  }}>
+                    💊 Pharmacist
+                  </span>
+                </div>
+                <button
+                  onClick={() => removePharmacist(ph._id)}
+                  style={{ background:'none', border:'none', cursor:'pointer', color:'var(--danger)', fontSize:16, padding:4, flexShrink:0 }}
+                  title="Remove pharmacist"
+                >🗑</button>
+              </div>
+              <div style={{ fontSize:13, display:'grid', gap:5 }}>
+                <div style={{ color:'var(--text-muted)' }}>✉️ {ph.email}</div>
+                {ph.phone && <div style={{ color:'var(--text-muted)' }}>📞 {ph.phone}</div>}
+              </div>
+              <div style={{
+                marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              }}>
+                <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                  Added {ph.addedAt}
+                </span>
+                <a
+                  href="/ims"
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    fontSize: 11.5, color: '#1565a8', fontWeight: 700,
+                    textDecoration: 'none',
+                    background: 'rgba(21,101,168,0.07)',
+                    border: '1px solid rgba(21,101,168,0.2)',
+                    borderRadius: 6, padding: '3px 10px',
+                  }}
+                >
+                  📦 Open IMS ↗
+                </a>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {show && (
+        <Modal title="Add Pharmacist" onClose={() => { setShow(false); setErr(''); }}>
+          <div style={{ display:'grid', gap:14 }}>
+            <div style={{
+              background: 'rgba(0,184,148,0.06)', border: '1px solid rgba(0,184,148,0.2)',
+              borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#4a6278',
+            }}>
+              💡 Pharmacists will be able to log in and access the <strong>Inventory Management System</strong> to manage medicines and stock.
+            </div>
+            <Input label="Full Name *" value={form.name} onChange={(e) => f('name', e.target.value)} placeholder="e.g. Ahmed Pharmacy" />
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <Input label="Login Email *" type="email" value={form.email} onChange={(e) => f('email', e.target.value)} placeholder="pharmacy@clinic.com" />
+              <Input label="Password *" type="password" value={form.password} onChange={(e) => f('password', e.target.value)} placeholder="••••••" />
+            </div>
+            <Input label="Phone" value={form.phone} onChange={(e) => f('phone', e.target.value)} placeholder="03xx-xxxxxxx" />
+            {err && <Alert type="error">{err}</Alert>}
+            <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
+              <Btn variant="ghost" onClick={() => { setShow(false); setErr(''); }}>Cancel</Btn>
+              <Btn onClick={addPharmacist} disabled={busy}>{busy ? 'Adding…' : 'Add Pharmacist'}</Btn>
             </div>
           </div>
         </Modal>
@@ -1020,94 +1031,76 @@ export function AllPatients({ patients }) {
       {Object.keys(grouped).length === 0 ? (
         <Card><div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No patients found</div></Card>
       ) : (
-        Object.entries(grouped).map(([doctorName, pats]) => {
-          const sortedPatients = pats.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          return (
-            <div key={doctorName} style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '10px 16px', background: 'var(--primary-light)', borderRadius: 10, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 18 }}>👨‍⚕️</span>
-                <span style={{ fontWeight: 700, fontSize: 15 }}>{doctorName}</span>
-                <Badge color="blue">{sortedPatients.length} patients</Badge>
-              </div>
-              <Card noPad>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                    <thead>
-                      <tr style={{ background: 'var(--surface2)' }}>
-                        {['Token','Name','Age','Phone','Symptoms','Paid Rs.','Dues Rs.','Payment','Date','Time','Status'].map((h) => (
-                          <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedPatients.map((p) => (
-                        <tr key={p._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '10px 14px' }}><TokenBadge token={p.token} size="sm" status={p.status} /></td>
-                          <td style={{ padding: '10px 14px', fontWeight: 500 }}>{p.name}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.age || '-'}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.phone || '-'}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.symptoms}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--success)', fontWeight: 500 }}>{p.paid || 0}</td>
-                          <td style={{ padding: '10px 14px', color: p.dues > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: p.dues > 0 ? 600 : 400 }}>{p.dues || 0}</td>
-                          <td style={{ padding: '10px 14px' }}><PaymentBadge method={p.paymentMethod} /></td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.date}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.time}</td>
-                          <td style={{ padding: '10px 14px' }}>
-                            <Badge color={p.status === 'called' ? 'green' : p.status === 'done' ? 'gray' : 'blue'}>{p.status}</Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+        Object.entries(grouped).map(([doctorName, pats]) => (
+          <div key={doctorName} style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '10px 16px', background: 'var(--primary-light)', borderRadius: 10 }}>
+              <span style={{ fontSize: 18 }}>👨‍⚕️</span>
+              <span style={{ fontWeight: 700, fontSize: 15 }}>{doctorName}</span>
+              <Badge color="blue">{pats.length} patients</Badge>
             </div>
-          );
-        })
+            <Card noPad>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface2)' }}>
+                      {['Token','Name','Age','Phone','Symptoms','Paid Rs.','Dues Rs.','Payment','Date','Time','Status'].map((h) => (
+                        <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pats.sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).map((p) => (
+                      <tr key={p._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '10px 14px' }}><TokenBadge token={p.token} size="sm" status={p.status} /></td>
+                        <td style={{ padding: '10px 14px', fontWeight: 500 }}>{p.name}</td>
+                        <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.age || '-'}</td>
+                        <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.phone || '-'}</td>
+                        <td style={{ padding: '10px 14px', color: 'var(--text-muted)', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.symptoms}</td>
+                        <td style={{ padding: '10px 14px', color: 'var(--success)', fontWeight: 500 }}>{p.paid || 0}</td>
+                        <td style={{ padding: '10px 14px', color: p.dues > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: p.dues > 0 ? 600 : 400 }}>{p.dues || 0}</td>
+                        <td style={{ padding: '10px 14px' }}><PaymentBadge method={p.paymentMethod} /></td>
+                        <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.date}</td>
+                        <td style={{ padding: '10px 14px', color: 'var(--text-muted)' }}>{p.time}</td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <Badge color={p.status === 'called' ? 'green' : p.status === 'done' ? 'gray' : 'blue'}>{p.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        ))
       )}
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// PINCODE FETCH HOOK
-// Uses India Post API — free, no key needed
-// Returns: { state, district, subDistrict, postOffices, loading, error }
-// ══════════════════════════════════════════════════════════════════════════════
+// ── Pincode hook ──────────────────────────────────────────────────────────────
 function usePincodeLookup() {
-  const [pincode,      setPincode]      = useState('');
-  const [fetchedData,  setFetchedData]  = useState(null);  // raw API result
-  const [loading,      setLoading]      = useState(false);
-  const [error,        setError]        = useState('');
+  const [pincode,     setPincode]     = useState('');
+  const [fetchedData, setFetchedData] = useState(null);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState('');
   const timerRef = useRef(null);
 
   useEffect(() => {
     const pin = pincode.replace(/\D/g, '');
-    if (pin.length !== 6) {
-      setFetchedData(null);
-      setError('');
-      return;
-    }
-    // Debounce 600ms so we don't fire on every keystroke
+    if (pin.length !== 6) { setFetchedData(null); setError(''); return; }
     clearTimeout(timerRef.current);
     timerRef.current = setTimeout(async () => {
-      setLoading(true);
-      setError('');
-      setFetchedData(null);
+      setLoading(true); setError(''); setFetchedData(null);
       try {
         const res  = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
         const json = await res.json();
         if (!json || !json[0] || json[0].Status !== 'Success' || !json[0].PostOffice?.length) {
-          setError('Pincode not found. Please check and enter manually.');
-          setLoading(false);
-          return;
+          setError('Pincode not found. Please enter manually.');
+          setLoading(false); return;
         }
-        setFetchedData(json[0].PostOffice); // array of post offices
-      } catch {
-        setError('Network error. Please fill fields manually.');
-      } finally {
-        setLoading(false);
-      }
+        setFetchedData(json[0].PostOffice);
+      } catch { setError('Network error. Please fill fields manually.'); }
+      finally { setLoading(false); }
     }, 600);
     return () => clearTimeout(timerRef.current);
   }, [pincode]);
@@ -1115,41 +1108,32 @@ function usePincodeLookup() {
   return { pincode, setPincode, fetchedData, loading, error };
 }
 
-/* ── Clinic Settings — with Pincode Auto-Fetch + Complete India Data ── */
+/* ── Clinic Settings ──────────────────────────────────────────── */
 function ClinicSettings({ clinic, onSave }) {
   const [form, setForm] = useState({
-    name:        clinic.name        || '',
-    owner:       clinic.owner       || '',
-    phone:       clinic.phone       || '',
-    email:       clinic.email       || '',
-    address:     clinic.address     || '',
-    pincode:     clinic.pincode     || '',
-    state:       clinic.state       || '',
-    district:    clinic.district    || '',
-    subDistrict: clinic.subDistrict || '',
-    city:        clinic.city        || '',
+    name: clinic.name || '', owner: clinic.owner || '', phone: clinic.phone || '',
+    email: clinic.email || '', address: clinic.address || '', pincode: clinic.pincode || '',
+    state: clinic.state || '', district: clinic.district || '',
+    subDistrict: clinic.subDistrict || '', city: clinic.city || '',
   });
   const [saved, setSaved] = useState(false);
   const [busy,  setBusy]  = useState(false);
   const [err,   setErr]   = useState('');
 
-  // Pincode lookup
   const { pincode: lookupPin, setPincode: setLookupPin, fetchedData, loading: pinLoading, error: pinError } = usePincodeLookup();
 
-  // When fetchedData arrives, auto-fill State, District, Sub-district
   useEffect(() => {
     if (!fetchedData || !fetchedData.length) return;
     const first = fetchedData[0];
     setForm((prev) => ({
       ...prev,
-      state:       first.State       || prev.state,
-      district:    first.District    || prev.district,
-      subDistrict: first.Block       || prev.subDistrict,
-      city:        first.Division    || prev.city,
+      state:       first.State    || prev.state,
+      district:    first.District || prev.district,
+      subDistrict: first.Block    || prev.subDistrict,
+      city:        first.Division || prev.city,
     }));
   }, [fetchedData]);
 
-  // Keep form.pincode and lookupPin in sync
   function handlePincodeChange(val) {
     const clean = val.replace(/\D/g, '').slice(0, 6);
     setForm((p) => ({ ...p, pincode: clean }));
@@ -1157,217 +1141,93 @@ function ClinicSettings({ clinic, onSave }) {
   }
 
   const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
-  // Districts for selected state
   const districts = form.state ? (INDIA_STATES_DISTRICTS[form.state] || []) : [];
-
-  // Post offices from API for sub-district suggestions
-  const subDistrictOptions = fetchedData
-    ? [...new Set(fetchedData.map((po) => po.Block).filter(Boolean))].sort()
-    : [];
-
-  const postOfficeOptions = fetchedData
-    ? fetchedData.map((po) => po.Name).filter(Boolean).sort()
-    : [];
+  const subDistrictOptions = fetchedData ? [...new Set(fetchedData.map((po) => po.Block).filter(Boolean))].sort() : [];
+  const postOfficeOptions  = fetchedData ? fetchedData.map((po) => po.Name).filter(Boolean).sort() : [];
 
   async function save() {
     setBusy(true); setErr('');
-    try {
-      await onSave(form);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
-    } catch(e) { setErr(e.message); }
+    try { await onSave(form); setSaved(true); setTimeout(() => setSaved(false), 2200); }
+    catch(e) { setErr(e.message); }
     finally { setBusy(false); }
   }
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 9,
-    border: '1.5px solid #d0dce8', fontSize: 13, fontFamily: 'inherit',
-    outline: 'none', color: '#0a3d62', background: '#fff',
-    boxSizing: 'border-box', transition: 'border-color 0.15s',
-  };
+  const inputStyle = { width: '100%', padding: '9px 12px', borderRadius: 9, border: '1.5px solid #d0dce8', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0a3d62', background: '#fff', boxSizing: 'border-box' };
   const labelStyle = { fontSize: 12, fontWeight: 700, color: '#4a6278', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: 0.4 };
-  const fieldWrap  = { display: 'flex', flexDirection: 'column' };
 
   return (
     <div style={{ maxWidth: 680 }}>
       <SectionHeader title="Clinic Settings" subtitle="Manage your clinic information" />
-
-      {/* ── Basic Info ── */}
       <Card style={{ marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          🏥 Basic Information
-        </div>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>🏥 Basic Information</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div style={fieldWrap}>
-            <label style={labelStyle}>Clinic Name *</label>
-            <input style={inputStyle} value={form.name} onChange={(e) => f('name', e.target.value)} placeholder="e.g. City Care Clinic" />
-          </div>
-          <div style={fieldWrap}>
-            <label style={labelStyle}>Owner / Doctor Name *</label>
-            <input style={inputStyle} value={form.owner} onChange={(e) => f('owner', e.target.value)} placeholder="e.g. Dr. Ramesh Kumar" />
-          </div>
-          <div style={fieldWrap}>
-            <label style={labelStyle}>Phone</label>
-            <input style={inputStyle} value={form.phone} onChange={(e) => f('phone', e.target.value)} placeholder="e.g. 9876543210" />
-          </div>
-          <div style={fieldWrap}>
-            <label style={labelStyle}>Email</label>
-            <input style={inputStyle} type="email" value={form.email} onChange={(e) => f('email', e.target.value)} placeholder="clinic@example.com" />
-          </div>
-          <div style={{ ...fieldWrap, gridColumn: '1 / -1' }}>
-            <label style={labelStyle}>Street Address</label>
-            <input style={inputStyle} value={form.address} onChange={(e) => f('address', e.target.value)} placeholder="e.g. 12, Main Road, Near Bus Stand" />
-          </div>
+          <div><label style={labelStyle}>Clinic Name *</label><input style={inputStyle} value={form.name} onChange={(e) => f('name', e.target.value)} /></div>
+          <div><label style={labelStyle}>Owner / Doctor Name *</label><input style={inputStyle} value={form.owner} onChange={(e) => f('owner', e.target.value)} /></div>
+          <div><label style={labelStyle}>Phone</label><input style={inputStyle} value={form.phone} onChange={(e) => f('phone', e.target.value)} /></div>
+          <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={form.email} onChange={(e) => f('email', e.target.value)} /></div>
+          <div style={{ gridColumn: '1/-1' }}><label style={labelStyle}>Street Address</label><input style={inputStyle} value={form.address} onChange={(e) => f('address', e.target.value)} /></div>
         </div>
       </Card>
 
-      {/* ── Location with Pincode Auto-fetch ── */}
       <Card style={{ marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, paddingBottom: 10, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          📍 Location Details
-        </div>
-        <div style={{ fontSize: 12, color: '#8fa8bc', marginBottom: 16 }}>
-          Enter your 6-digit pincode and State, District, Sub-district will fill automatically ✨
-        </div>
-
-        {/* Pincode row */}
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, paddingBottom: 10, borderBottom: '1px solid var(--border)' }}>📍 Location Details</div>
+        <div style={{ fontSize: 12, color: '#8fa8bc', marginBottom: 16 }}>Enter your 6-digit pincode to auto-fill State, District, Sub-district ✨</div>
         <div style={{ marginBottom: 16 }}>
           <label style={labelStyle}>Pincode</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <div style={{ position: 'relative', width: 160 }}>
-              <input
-                style={{ ...inputStyle, width: '100%', paddingRight: 36, fontWeight: 700, letterSpacing: 2, fontSize: 15,
-                  borderColor: pinError ? '#e74c3c' : fetchedData ? '#00b894' : '#d0dce8' }}
-                value={form.pincode}
-                onChange={(e) => handlePincodeChange(e.target.value)}
-                placeholder="e.g. 110001"
-                maxLength={6}
-              />
-              {pinLoading && (
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>⏳</span>
-              )}
-              {!pinLoading && fetchedData && (
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>✅</span>
-              )}
-              {!pinLoading && pinError && (
-                <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>❌</span>
-              )}
+              <input style={{ ...inputStyle, width: '100%', borderColor: pinError ? '#e74c3c' : fetchedData ? '#00b894' : '#d0dce8' }}
+                value={form.pincode} onChange={(e) => handlePincodeChange(e.target.value)} maxLength={6} placeholder="e.g. 110001" />
             </div>
-            {pinLoading && <span style={{ fontSize: 12, color: '#1565a8', fontWeight: 600 }}>🔍 Fetching location data…</span>}
-            {fetchedData && !pinLoading && (
-              <span style={{ fontSize: 12, color: '#00a878', fontWeight: 600 }}>
-                ✅ Found {fetchedData.length} post office{fetchedData.length > 1 ? 's' : ''} — fields filled automatically!
-              </span>
-            )}
-            {pinError && !pinLoading && (
-              <span style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600 }}>{pinError}</span>
-            )}
+            {pinLoading && <span style={{ fontSize: 12, color: '#1565a8', fontWeight: 600 }}>🔍 Fetching…</span>}
+            {fetchedData && !pinLoading && <span style={{ fontSize: 12, color: '#00a878', fontWeight: 600 }}>✅ Filled automatically!</span>}
+            {pinError && !pinLoading && <span style={{ fontSize: 12, color: '#e74c3c', fontWeight: 600 }}>{pinError}</span>}
           </div>
         </div>
-
-        {/* State + District */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <div style={fieldWrap}>
+          <div>
             <label style={labelStyle}>State / UT</label>
-            <select
-              style={{ ...inputStyle, cursor: 'pointer' }}
-              value={form.state}
-              onChange={(e) => { f('state', e.target.value); f('district', ''); f('subDistrict', ''); }}
-            >
+            <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.state} onChange={(e) => { f('state', e.target.value); f('district', ''); f('subDistrict', ''); }}>
               <option value="">-- Select State --</option>
               {INDIA_STATE_NAMES.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            {/* Show count of districts */}
-            {form.state && (
-              <span style={{ fontSize: 11, color: '#8fa8bc', marginTop: 4 }}>
-                {(INDIA_STATES_DISTRICTS[form.state] || []).length} districts available
-              </span>
-            )}
           </div>
-
-          <div style={fieldWrap}>
+          <div>
             <label style={labelStyle}>District</label>
-            <select
-              style={{ ...inputStyle, cursor: form.state ? 'pointer' : 'not-allowed', opacity: form.state ? 1 : 0.6 }}
-              value={form.district}
-              onChange={(e) => f('district', e.target.value)}
-              disabled={!form.state}
-            >
+            <select style={{ ...inputStyle, cursor: form.state ? 'pointer' : 'not-allowed', opacity: form.state ? 1 : 0.6 }} value={form.district} onChange={(e) => f('district', e.target.value)} disabled={!form.state}>
               <option value="">-- Select District --</option>
               {districts.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
         </div>
-
-        {/* Sub-district + City */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <div style={fieldWrap}>
-            <label style={labelStyle}>Sub-district / Block / Tehsil</label>
-            {subDistrictOptions.length > 0 ? (
-              <select
-                style={{ ...inputStyle, cursor: 'pointer' }}
-                value={form.subDistrict}
-                onChange={(e) => f('subDistrict', e.target.value)}
-              >
-                <option value="">-- Select Sub-district --</option>
-                {subDistrictOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            ) : (
-              <input style={inputStyle} value={form.subDistrict} onChange={(e) => f('subDistrict', e.target.value)} placeholder="e.g. Connaught Place" />
-            )}
+          <div>
+            <label style={labelStyle}>Sub-district / Block</label>
+            {subDistrictOptions.length > 0
+              ? <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.subDistrict} onChange={(e) => f('subDistrict', e.target.value)}>
+                  <option value="">-- Select --</option>
+                  {subDistrictOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              : <input style={inputStyle} value={form.subDistrict} onChange={(e) => f('subDistrict', e.target.value)} />}
           </div>
-
-          <div style={fieldWrap}>
-            <label style={labelStyle}>City / Town / Post Office</label>
-            {postOfficeOptions.length > 0 ? (
-              <select
-                style={{ ...inputStyle, cursor: 'pointer' }}
-                value={form.city}
-                onChange={(e) => f('city', e.target.value)}
-              >
-                <option value="">-- Select Post Office --</option>
-                {postOfficeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            ) : (
-              <input style={inputStyle} value={form.city} onChange={(e) => f('city', e.target.value)} placeholder="e.g. New Delhi" />
-            )}
+          <div>
+            <label style={labelStyle}>City / Town</label>
+            {postOfficeOptions.length > 0
+              ? <select style={{ ...inputStyle, cursor: 'pointer' }} value={form.city} onChange={(e) => f('city', e.target.value)}>
+                  <option value="">-- Select --</option>
+                  {postOfficeOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              : <input style={inputStyle} value={form.city} onChange={(e) => f('city', e.target.value)} />}
           </div>
         </div>
-
-        {/* Post offices list (when API data available) */}
-        {fetchedData && fetchedData.length > 0 && (
-          <div style={{ marginTop: 14, background: 'rgba(0,184,148,0.05)', border: '1.5px solid rgba(0,184,148,0.2)', borderRadius: 10, padding: '12px 14px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#00a878', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.4 }}>
-              📮 Post Offices in this Pincode
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {fetchedData.map((po) => (
-                <span
-                  key={po.Name}
-                  onClick={() => f('city', po.Name)}
-                  title={`Click to select: ${po.Name}`}
-                  style={{ background: form.city === po.Name ? '#00b894' : '#fff', color: form.city === po.Name ? '#fff' : '#0a3d62', border: `1px solid ${form.city === po.Name ? '#00b894' : '#c5d5e8'}`, borderRadius: 20, padding: '3px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', transition: '.15s' }}
-                >
-                  {po.Name}
-                  {po.BranchType && <span style={{ opacity: 0.6, marginLeft: 4, fontSize: 10 }}>({po.BranchType})</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </Card>
 
-      {/* Save */}
       <Card>
         {saved && <Alert type="success" style={{ marginBottom: 14 }}>✓ Settings saved successfully!</Alert>}
         {err   && <Alert type="error"   style={{ marginBottom: 14 }}>{err}</Alert>}
-        <Btn onClick={save} disabled={busy} full size="lg">
-          {busy ? 'Saving…' : '💾 Save Clinic Settings'}
-        </Btn>
+        <Btn onClick={save} disabled={busy} full size="lg">{busy ? 'Saving…' : '💾 Save Clinic Settings'}</Btn>
       </Card>
 
-      {/* Subscription */}
       <div style={{ marginTop: 24 }}>
         <SectionHeader title="Subscription Plan" />
         <Card>
@@ -1379,10 +1239,9 @@ function ClinicSettings({ clinic, onSave }) {
               </div>
               <div style={{ fontSize:13, color:'var(--text-muted)' }}>Activated: {clinic.planActivatedAt}</div>
               <div style={{ fontSize:13, color:'var(--text-muted)' }}>Renews: {clinic.planExpiresAt}</div>
-              <div style={{ fontSize:13, color:'var(--text-muted)' }}>Price: Rs. {clinic.plan==='pro' ? '2,999' : '999'} / month</div>
             </div>
           ) : (
-            <div style={{ color:'var(--text-muted)', fontSize:14, lineHeight:1.6 }}>No active plan. Please choose a plan to access all features.</div>
+            <div style={{ color:'var(--text-muted)', fontSize:14 }}>No active plan. Please choose a plan to access all features.</div>
           )}
         </Card>
       </div>
