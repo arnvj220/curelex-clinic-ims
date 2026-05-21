@@ -5,6 +5,8 @@ import {
 } from '../components/UI';
 import { today } from '../utils/helpers';
 import { useApp } from '../context/AppContext';
+// ── at the top of AdminDashboard.jsx, add this import ──
+import { registerPharmacistInIMS } from '../utils/imsAuthBridge';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -838,16 +840,25 @@ function PharmacistManagement({ pharmacists, onAdd, onDelete }) {
   const [form, setForm] = useState({ name:'', email:'', phone:'', password:'' });
   const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  async function addPharmacist() {
-    if (!form.name || !form.email || !form.password) { setErr('Fill all required fields.'); return; }
-    setBusy(true); setErr('');
-    try {
-      await onAdd({ role: 'pharmacist', ...form });
-      setForm({ name:'', email:'', phone:'', password:'' });
-      setShow(false);
-    } catch(e) { setErr(e.message); }
-    finally { setBusy(false); }
-  }
+ async function addPharmacist() {
+  if (!form.name || !form.email || !form.password) { setErr('Fill all required fields.'); return; }
+  setBusy(true); setErr('');
+  try {
+    // 1. Add to clinic
+    await onAdd({ role: 'pharmacist', ...form });
+
+    // 2. Register in IMS so SSO exchange works
+    await registerPharmacistInIMS({
+      fullName: form.name,
+      email:    form.email,
+      password: form.password,
+    });
+
+    setForm({ name:'', email:'', phone:'', password:'' });
+    setShow(false);
+  } catch(e) { setErr(e.message); }
+  finally { setBusy(false); }
+}
 
   async function removePharmacist(id) {
     if (!window.confirm('Remove this pharmacist?')) return;

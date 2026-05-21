@@ -65,6 +65,12 @@ export async function apiRegister(form) {
   return data;
 }
 
+// ── REPLACE your existing apiLogin function in api.js with this ──────────────
+//
+// KEY FIX: setSession() is called BEFORE the IMS pre-login attempt,
+// so clinic_session in localStorage always has email+password stored
+// by the time PharmacistDashboard mounts and reads it.
+
 export async function apiLogin(role, email, password) {
   const data = await request('/auth/login', {
     method: 'POST',
@@ -74,28 +80,26 @@ export async function apiLogin(role, email, password) {
   setToken(data.token);
   const clinicId = data.clinicId ? String(data.clinicId) : null;
 
+  // ✅ No password stored — ever
   setSession({
-    type:     data.role,
+    type:    data.role,
     clinicId,
-    user:     data.clinic || data.user || null,
-    token:    data.token,
+    user:    data.clinic || data.user || null,
+    token:   data.token,
     email,
-    password,
-    name:     data.clinic?.name || data.user?.name || data.user?.fullName || email,
+    name:    data.clinic?.name || data.user?.name || data.user?.fullName || email,
   });
 
-  if (data.role === 'pharmacist') {
-    try {
-      const { loginPharmacistIntoIMS } = await import('./imsAuthBridge');
-      await loginPharmacistIntoIMS({ email, password });
-    } catch (e) {
-      console.warn('IMS pre-login failed:', e.message);
-    }
-  }
+  // ✅ Store short-lived SSO token for pharmacist IMS redirect
+  if (data.role === 'pharmacist' && data.ssoToken) {
+  sessionStorage.setItem('ims_sso_token', data.ssoToken);
+  console.log('✅ SSO token saved:', data.ssoToken); // ← add this
+} else {
+  console.log('❌ No ssoToken in response:', data); // ← add this
+}
 
   return data;
 }
-
 export function apiLogout() {
   removeToken();
   removeSession();
@@ -113,7 +117,21 @@ export async function apiUpdateMyClinic(updates) {
     body: JSON.stringify(updates),
   });
 }
+// ── Patient History by phone ─────────────────────────────────────
+export async function apiGetPatientHistory(phone) {
+  const token = localStorage.getItem('clinic_token');
+  const BASE  = import.meta.env.VITE_CLINIC_API_URL
+    ? `${import.meta.env.VITE_CLINIC_API_URL}`
+    : '/api/clinic';
 
+  const res  = await fetch(`${BASE}/patients/history/${phone}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch history');
+  return data.visits || [];
+}
 export async function apiActivatePlan(plan) {
   return request('/clinics/activate-plan', {
     method: 'POST',

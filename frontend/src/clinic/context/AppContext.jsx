@@ -18,6 +18,7 @@ import {
   apiGetPatientFiles,
   apiDownloadPatientFile,
   apiDeletePatientFile,
+  apiGetPatientHistory,   // ← ADD THIS IMPORT
 } from '../utils/api';
 
 const AppContext = createContext(null);
@@ -57,29 +58,33 @@ export function AppProvider({ children }) {
     (patientId, status) => apiUpdatePatientStatus(patientId, status),
     []
   );
-  const updateFollowUp      = useCallback(
-    (patientId, followUpDate, followUpNote) => apiUpdateFollowUp(patientId, followUpDate, followUpNote),
+  const updateFollowUp = useCallback(
+    (patientId, followUpDate, followUpNote) =>
+      apiUpdateFollowUp(patientId, followUpDate, followUpNote),
     []
   );
 
-  // ── Patient Files (FIXED) ───────────────────────────────────────
+  // ── Patient Files ────────────────────────────────────────────────
   const uploadPatientFile = useCallback(
     (patientId, file) => apiUploadPatientFile(patientId, file),
     []
   );
-  
   const getPatientFiles = useCallback(
     (patientId) => apiGetPatientFiles(patientId),
     []
   );
-  
   const downloadPatientFile = useCallback(
     (patientId, fileId) => apiDownloadPatientFile(patientId, fileId),
     []
   );
-  
   const deletePatientFile = useCallback(
     (patientId, fileId) => apiDeletePatientFile(patientId, fileId),
+    []
+  );
+
+  // ── Patient History (was completely missing!) ────────────────────
+  const getPatientHistory = useCallback(
+    (phone) => apiGetPatientHistory(phone),
     []
   );
 
@@ -91,6 +96,7 @@ export function AppProvider({ children }) {
       updateTokenLimit,
       getPatients, addPatient, updatePatientStatus, updateFollowUp,
       uploadPatientFile, getPatientFiles, downloadPatientFile, deletePatientFile,
+      getPatientHistory,   // ← ADD THIS TO PROVIDER
     }}>
       {children}
     </AppContext.Provider>

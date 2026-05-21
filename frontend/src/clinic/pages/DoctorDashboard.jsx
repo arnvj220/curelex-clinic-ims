@@ -7,6 +7,16 @@ import { FileUploadSection } from '../components/FileUpload';
 import { today } from '../utils/helpers';
 import { useApp } from '../context/AppContext';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// ── IST date helper ───────────────────────────────────────────────
+function getTodayIST() {
+  const now       = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000;
+  const istDate   = new Date(now.getTime() + istOffset);
+  return istDate.toISOString().split('T')[0];
+}
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -17,8 +27,8 @@ function getGreeting() {
 // ── Follow-up helpers ─────────────────────────────────────────────
 function daysUntil(dateStr) {
   if (!dateStr) return null;
-  const now    = new Date(); now.setHours(0,0,0,0);
-  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  const now    = new Date(); now.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
   return Math.round((target - now) / (1000 * 60 * 60 * 24));
 }
 
@@ -26,10 +36,10 @@ function followUpBadgeStyle(days) {
   if (days < 0)   return { bg: 'rgba(231,76,60,0.10)',  border: 'rgba(231,76,60,0.3)',   color: '#c0392b', label: 'Overdue' };
   if (days === 0) return { bg: 'rgba(231,76,60,0.10)',  border: 'rgba(231,76,60,0.3)',   color: '#c0392b', label: 'Today!' };
   if (days <= 3)  return { bg: 'rgba(243,156,18,0.10)', border: 'rgba(243,156,18,0.3)',  color: '#d68910', label: `${days}d left` };
-  return              { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.25)',  color: '#00a878', label: `${days}d left` };
+  return               { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.25)',  color: '#00a878', label: `${days}d left` };
 }
 
-// ── Payment method badge helper ───────────────────────────────────
+// ── Payment badge ─────────────────────────────────────────────────
 function PaymentBadge({ method }) {
   if (method === 'upi') {
     return (
@@ -45,6 +55,53 @@ function PaymentBadge({ method }) {
   );
 }
 
+// ── Past visit file row (read-only, doctor view) ──────────────────
+function DoctorPastFileRow({ file, patientId, onDownload }) {
+  const [downloading, setDownloading] = useState(false);
+
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const blob = await onDownload(patientId, String(file._id));
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = file.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Download failed: ' + e.message);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  const isImage = file.mimeType?.startsWith('image/');
+  const isPdf   = file.mimeType === 'application/pdf';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 5 }}>
+      <span style={{ fontSize: 16, flexShrink: 0 }}>{isPdf ? '📄' : isImage ? '🖼️' : '📎'}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.filename}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          {(file.size / 1024).toFixed(1)} KB · {file.uploadedBy} · {new Date(file.uploadedAt).toLocaleDateString()}
+        </div>
+      </div>
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #7c3aed', background: 'rgba(124,58,237,0.08)', color: '#7c3aed', fontSize: 11, fontWeight: 700, cursor: downloading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', flexShrink: 0, opacity: downloading ? 0.6 : 1 }}
+      >
+        {downloading ? '⏳' : '⬇ View'}
+      </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+   ══════════════════════════════════════════════════════════════ */
 export default function DoctorDashboard() {
   const {
     session, logout,
@@ -67,7 +124,7 @@ export default function DoctorDashboard() {
     try {
       const [me, pats] = await Promise.all([
         getMe(),
-        getPatients({date: getTodayIST()}),
+        getPatients({ date: getTodayIST() }),
       ]);
       setDocUser(me);
       setPatients(pats);
@@ -82,20 +139,14 @@ export default function DoctorDashboard() {
     return () => clearInterval(id);
   }, [reload]);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayIST();
+  const myId     = docUser?._id;
 
-const myId = docUser?._id;
+  const myPatients = patients
+    .filter((p) => p.date === todayStr && myId && String(p.doctorId) === String(myId))
+    .sort((a, b) => a.token - b.token);
 
-const myPatients = patients
-  .filter(
-    (p) =>
-      p.date === todayStr &&
-      myId &&
-      String(p.doctorId) === String(myId)
-  )
-  .sort((a, b) => a.token - b.token);
-
-const allMyPatients = patients;
+  const allMyPatients = patients;
 
   const waiting = myPatients.filter((p) => p.status === 'waiting');
   const called  = myPatients.filter((p) => p.status === 'called');
@@ -105,7 +156,6 @@ const allMyPatients = patients;
   const dailyTokenLimit = docUser?.dailyTokenLimit ?? 0;
   const limitReached    = dailyTokenLimit > 0 && myPatients.length >= dailyTokenLimit;
   const greeting        = `${getGreeting()}, Dr. ${session?.user?.name || ''} · ${session?.user?.specialist || ''}`;
- // const myId            = docUser?._id;
   const followUpCount   = allMyPatients.filter((p) => p.followUpDate).length;
 
   const navItems = [
@@ -270,7 +320,7 @@ function QueueTab({ myPatients, waiting, called, done, currentPatient, dailyToke
   );
 }
 
-/* ── Current Patient Spotlight Card ──────────────────────────── */
+/* ── Current Patient Spotlight ───────────────────────────────── */
 function CurrentPatientCard({ patient: p, onUpdateStatus }) {
   const pid = p._id || p.id;
   return (
@@ -317,93 +367,79 @@ function CurrentPatientCard({ patient: p, onUpdateStatus }) {
 function TokenRow({ patient: p, isLast, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile }) {
   const pid = p._id || p.id;
   const [showFollowUp, setShowFollowUp] = useState(false);
-  const [showFiles, setShowFiles] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [showFiles,    setShowFiles]    = useState(false);
+  const [files,        setFiles]        = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [pastVisits,   setPastVisits]   = useState([]);
   const bgMap = { waiting: 'var(--surface)', called: '#fefce8', done: 'var(--surface2)' };
-  const days = daysUntil(p.followUpDate);
+  const days  = daysUntil(p.followUpDate);
 
-  // Load files when toggling
+  // Load files when panel opens
   useEffect(() => {
-    if (showFiles && files.length === 0 && !loadingFiles) {
-      loadFiles();
-    }
+    if (showFiles && files.length === 0 && !loadingFiles) loadFiles();
   }, [showFiles]);
 
- // Update loadFiles function
-async function loadFiles() {
-  setLoadingFiles(true);
-  try {
-    const result = await onGetFiles(pid);
-    let filesArray = [];
-    
-    if (Array.isArray(result)) {
-      filesArray = result;
-    } else if (result && result.files && Array.isArray(result.files)) {
-      filesArray = result.files;
-    }
-    
-    setFiles(filesArray);
-  } catch (err) {
-    console.error('Failed to load files:', err);
-    setFiles([]);
-  } finally {
-    setLoadingFiles(false);
-  }
-}
-
-// Update handleUploadFile function
-async function handleUploadFile(patientId, file) {
-  try {
-    await onUploadFile(patientId, file);
-    // Reload files after upload
-    setTimeout(async () => {
+  async function loadFiles() {
+    setLoadingFiles(true);
+    try {
+      // ── 1. Today's files ──────────────────────────────────────
       const result = await onGetFiles(pid);
-      let filesArray = [];
-      
-      if (Array.isArray(result)) {
-        filesArray = result;
-      } else if (result && result.files && Array.isArray(result.files)) {
-        filesArray = result.files;
-      }
-      
-      setFiles(filesArray);
-    }, 500);
-  } catch (err) {
-    throw err;
-  }
-}
+      // result is already an array from apiGetPatientFiles
+      setFiles(Array.isArray(result) ? result : (result?.files || []));
 
-// Update handleDeleteFile function
-async function handleDeleteFile(patientId, fileId) {
-  try {
-    await onDeleteFile(patientId, fileId);
-    // Reload files after delete
-    const result = await onGetFiles(pid);
-    let filesArray = [];
-    
-    if (Array.isArray(result)) {
-      filesArray = result;
-    } else if (result && result.files && Array.isArray(result.files)) {
-      filesArray = result.files;
+      // ── 2. Past visit files (by phone number) ─────────────────
+      if (p.phone) {
+        try {
+          const token = localStorage.getItem('clinic_token');
+          const BASE  = import.meta.env.VITE_CLINIC_API_URL
+            ? `${import.meta.env.VITE_CLINIC_API_URL}`
+            : '/api/clinic';
+          const resp  = await fetch(`${BASE}/patients/history/${p.phone}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await resp.json();
+          if (data.success) {
+            const past = (data.visits || []).filter(
+              (v) => String(v._id) !== String(pid) && v.files?.length > 0
+            );
+            setPastVisits(past);
+          }
+        } catch (e) {
+          console.error('Failed to load past visit files:', e);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load files:', err);
+      setFiles([]);
+    } finally {
+      setLoadingFiles(false);
     }
-    
-    setFiles(filesArray);
-  } catch (err) {
-    throw err;
   }
-}
-const handleDownloadFile = useCallback(async (pid,fileId) => {
-  
-  if (!fileId || fileId === pid) {
-    console.error('Invalid file ID:', fileId);
-    throw new Error('Invalid file ID');
+
+  // ── FIX: removed setTimeout race condition ────────────────────
+  async function handleUploadFile(patientId, file) {
+    await onUploadFile(patientId, file);
+    // Re-fetch immediately after upload completes (no setTimeout)
+    const result = await onGetFiles(pid);
+    setFiles(Array.isArray(result) ? result : (result?.files || []));
   }
-  return onDownloadFile(pid, fileId);
-}, [pid, onDownloadFile]);
+
+  async function handleDeleteFile(patientId, fileId) {
+    await onDeleteFile(patientId, fileId);
+    const result = await onGetFiles(pid);
+    setFiles(Array.isArray(result) ? result : (result?.files || []));
+  }
+
+  async function handleDownloadFile(patientId, fileId) {
+    if (!fileId || fileId === patientId) throw new Error('Invalid file ID');
+    return onDownloadFile(patientId, fileId);
+  }
+
+  const totalFileCount = files.length + pastVisits.reduce((s, v) => s + v.files.length, 0);
 
   return (
     <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
+      {/* ── Main row ── */}
       <div className="doctor-token-row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: bgMap[p.status] }}>
         <TokenBadge token={p.token} size="md" status={p.status} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -424,8 +460,8 @@ const handleDownloadFile = useCallback(async (pid,fileId) => {
           <Badge color={p.status === 'called' ? 'yellow' : p.status === 'done' ? 'gray' : 'blue'}>
             {p.status === 'waiting' ? '⏳ Waiting' : p.status === 'called' ? '📢 Called' : '✓ Done'}
           </Badge>
-          {p.status === 'waiting' && <Btn size="sm" variant="outline" onClick={() => onUpdateStatus(pid, 'called')}>Call</Btn>}
-          {p.status === 'called'  && <Btn size="sm" variant="success" onClick={() => onUpdateStatus(pid, 'done')}>Done</Btn>}
+          {p.status === 'waiting' && <Btn size="sm" variant="outline"  onClick={() => onUpdateStatus(pid, 'called')}>Call</Btn>}
+          {p.status === 'called'  && <Btn size="sm" variant="success"  onClick={() => onUpdateStatus(pid, 'done')}>Done</Btn>}
           <button
             onClick={() => setShowFollowUp((v) => !v)}
             title="Set follow-up date"
@@ -435,9 +471,15 @@ const handleDownloadFile = useCallback(async (pid,fileId) => {
             onClick={() => setShowFiles((v) => !v)}
             title="Manage patient files"
             style={{ background: showFiles ? 'rgba(52,152,219,0.15)' : 'none', border: '1px solid #c5d5e8', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 14, color: showFiles ? '#3498db' : 'var(--text-light)' }}
-          >📎 {files.length > 0 && <span style={{ fontSize: 11, fontWeight: 700 }}>({files.length})</span>}</button>
+          >
+            📎 {totalFileCount > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 700 }}>({totalFileCount})</span>
+            )}
+          </button>
         </div>
       </div>
+
+      {/* ── Follow-up editor ── */}
       {showFollowUp && (
         <FollowUpInlineEditor
           patient={p}
@@ -445,16 +487,78 @@ const handleDownloadFile = useCallback(async (pid,fileId) => {
           onCancel={() => setShowFollowUp(false)}
         />
       )}
+
+      {/* ── Files panel ── */}
       {showFiles && (
         <div style={{ padding: '14px 18px', borderTop: '1px solid var(--border)', background: 'rgba(52,152,219,0.02)' }}>
-          <FileUploadSection
-  patientId={pid}
-  files={files}
-  onUpload={handleUploadFile}
-  onDelete={handleDeleteFile}
-  onDownload={handleDownloadFile}
-  disabled={loadingFiles}
-/>
+          {loadingFiles ? (
+            <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-muted)', fontSize: 13 }}>⏳ Loading files…</div>
+          ) : (
+            <>
+              {/* Today's files — full upload/delete/download */}
+              <FileUploadSection
+                patientId={pid}
+                files={files}
+                onUpload={handleUploadFile}
+                onDelete={handleDeleteFile}
+                onDownload={handleDownloadFile}
+                disabled={loadingFiles}
+              />
+
+              {/* Past visit files — read-only */}
+              {pastVisits.length > 0 && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{
+                    fontSize: 12, fontWeight: 700, color: 'var(--text-muted)',
+                    textTransform: 'uppercase', letterSpacing: 0.5,
+                    marginBottom: 10, paddingTop: 12,
+                    borderTop: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <span>📁 Files from Previous Visits</span>
+                    <span style={{ background: '#7c3aed', color: '#fff', borderRadius: 20, padding: '1px 8px', fontSize: 10, fontWeight: 700, textTransform: 'none', letterSpacing: 0 }}>
+                      {pastVisits.reduce((s, v) => s + v.files.length, 0)}
+                    </span>
+                  </div>
+                  {pastVisits.map((visit) => (
+                    <div key={String(visit._id)} style={{ marginBottom: 14 }}>
+                      <div style={{
+                        fontSize: 11, fontWeight: 700, marginBottom: 6,
+                        padding: '5px 8px',
+                        background: 'rgba(124,58,237,0.06)',
+                        border: '1px solid rgba(124,58,237,0.15)',
+                        borderRadius: 6,
+                        display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+                      }}>
+                        <span style={{ color: '#7c3aed' }}>📅 {visit.date}</span>
+                        <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                          · {visit.symptoms?.substring(0, 50)}{visit.symptoms?.length > 50 ? '…' : ''}
+                        </span>
+                        <span style={{ marginLeft: 'auto', background: 'rgba(124,58,237,0.1)', color: '#7c3aed', borderRadius: 20, padding: '1px 7px', fontSize: 10 }}>
+                          {visit.files.length} file{visit.files.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      {visit.files.map((f) => (
+                        <DoctorPastFileRow
+                          key={String(f._id)}
+                          file={f}
+                          patientId={String(visit._id)}
+                          onDownload={onDownloadFile}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Empty past visits state */}
+              {!loadingFiles && pastVisits.length === 0 && p.phone && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📁</span> No files from previous visits.
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -482,7 +586,7 @@ function FollowUpInlineEditor({ patient: p, onSave, onCancel }) {
         <div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 3 }}>Date</div>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            min={getTodayIST()}
             style={{ padding: '6px 10px', borderRadius: 8, border: '1.5px solid #c5d5e8', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0a3d62', fontWeight: 600 }} />
         </div>
         <div style={{ flex: 1, minWidth: 160 }}>
@@ -749,10 +853,4 @@ function FollowUpsTab({ allMyPatients, onUpdateFollowUp }) {
       )}
     </div>
   );
-}
-function getTodayIST() {
-  const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const istDate = new Date(now.getTime() + istOffset);
-  return istDate.toISOString().split('T')[0];
 }

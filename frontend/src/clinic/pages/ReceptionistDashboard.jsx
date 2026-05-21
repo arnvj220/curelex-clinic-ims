@@ -8,19 +8,18 @@ import { today, currentTime } from '../utils/helpers';
 import { useApp } from '../context/AppContext';
 import { AllPatients } from './AdminDashboard';
 
-
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // ── IST date helper ───────────────────────────────────────────────
 function getTodayIST() {
-  const now = new Date();
+  const now       = new Date();
   const istOffset = 5.5 * 60 * 60 * 1000;
-  const istDate = new Date(now.getTime() + istOffset);
+  const istDate   = new Date(now.getTime() + istOffset);
   return istDate.toISOString().split('T')[0];
 }
 
 function getGreeting(name) {
-  const h = new Date().getHours();
+  const h     = new Date().getHours();
   const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   return `${greet}, ${name} 👋`;
 }
@@ -28,8 +27,8 @@ function getGreeting(name) {
 // ── Follow-up helpers ─────────────────────────────────────────────
 function daysUntil(dateStr) {
   if (!dateStr) return null;
-  const now    = new Date(); now.setHours(0,0,0,0);
-  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  const now    = new Date(); now.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr); target.setHours(0, 0, 0, 0);
   return Math.round((target - now) / (1000 * 60 * 60 * 24));
 }
 
@@ -37,7 +36,7 @@ function followUpBadgeStyle(days) {
   if (days < 0)   return { bg: 'rgba(231,76,60,0.10)',  border: 'rgba(231,76,60,0.3)',   color: '#c0392b', label: 'Overdue' };
   if (days === 0) return { bg: 'rgba(231,76,60,0.10)',  border: 'rgba(231,76,60,0.3)',   color: '#c0392b', label: 'Today!' };
   if (days <= 3)  return { bg: 'rgba(243,156,18,0.10)', border: 'rgba(243,156,18,0.3)',  color: '#d68910', label: `${days}d left` };
-  return              { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.25)',  color: '#00a878', label: `${days}d left` };
+  return               { bg: 'rgba(0,184,148,0.08)',  border: 'rgba(0,184,148,0.25)',  color: '#00a878', label: `${days}d left` };
 }
 
 // ── Payment badge ─────────────────────────────────────────────────
@@ -58,8 +57,7 @@ function PaymentBadge({ method }) {
 
 // ── Phone Input ───────────────────────────────────────────────────
 function PhoneInput({ label, value, onChange, placeholder }) {
-  const isValid = value.length === 0 || value.length === 10;
-  const isFull  = value.length === 10;
+  const isFull = value.length === 10;
 
   function handleChange(e) {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -91,20 +89,191 @@ function PhoneInput({ label, value, onChange, placeholder }) {
   );
 }
 
+// ── Past File Row ─────────────────────────────────────────────────
+function PastFileRow({ file, patientId }) {
+  const { downloadPatientFile } = useApp();
+  const [downloading, setDownloading] = useState(false);
 
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const blob = await downloadPatientFile(patientId, String(file._id));
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = file.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Download failed: ' + e.message);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  const isImage = file.mimeType?.startsWith('image/');
+  const isPdf   = file.mimeType === 'application/pdf';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 5 }}>
+      <span style={{ fontSize: 18, flexShrink: 0 }}>{isPdf ? '📄' : isImage ? '🖼️' : '📎'}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.filename}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+          {(file.size / 1024).toFixed(1)} KB · {file.uploadedBy} · {new Date(file.uploadedAt).toLocaleDateString()}
+        </div>
+      </div>
+      <button
+        onClick={handleDownload}
+        disabled={downloading}
+        style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #3498db', background: 'rgba(52,152,219,0.1)', color: '#3498db', fontSize: 11, fontWeight: 700, cursor: downloading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', flexShrink: 0, opacity: downloading ? 0.6 : 1 }}
+      >
+        {downloading ? '⏳' : '⬇ Download'}
+      </button>
+    </div>
+  );
+}
+
+// ── Past Files Preview ────────────────────────────────────────────
+function PastFilesPreview({ phone }) {
+  const { getPatientHistory } = useApp();
+  const [history,  setHistory]  = useState(null);
+  const [loading,  setLoading]  = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  // FIX: Always refetch fresh data when expanding (never use stale cache)
+  async function load() {
+    // If already expanded, just collapse — no need to refetch
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+
+    // Always fetch fresh data every time user expands
+    setLoading(true);
+    try {
+      const visits = await getPatientHistory(phone);
+      setHistory(visits || []);
+      setExpanded(true);
+    } catch (e) {
+      console.error('Failed to load history:', e);
+      setHistory([]);
+      setExpanded(true); // Still expand to show "no files" message
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const visitsWithFiles = history ? history.filter((v) => v.files?.length > 0) : [];
+  const totalFiles      = visitsWithFiles.reduce((s, v) => s + v.files.length, 0);
+
+  return (
+    <div style={{ borderTop: '1px solid var(--border)' }}>
+      <button
+        onClick={load}
+        disabled={loading}
+        style={{
+          width: '100%', padding: '8px 16px',
+          background: expanded ? 'rgba(52,152,219,0.08)' : 'rgba(52,152,219,0.04)',
+          border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontSize: 12,
+          color: '#3498db', fontWeight: 700, fontFamily: 'inherit',
+          textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6,
+          transition: 'background .15s',
+          opacity: loading ? 0.7 : 1,
+        }}
+      >
+        {loading
+          ? '⏳ Loading past files…'
+          : expanded
+            ? '📎 Hide Past Files'
+            : '📎 View Past Uploaded Files'
+        }
+        {/* Show count badge only when expanded and files exist */}
+        {!loading && expanded && totalFiles > 0 && (
+          <span style={{
+            background: '#3498db', color: '#fff',
+            borderRadius: 20, padding: '1px 8px', fontSize: 11,
+          }}>
+            {totalFiles}
+          </span>
+        )}
+        {/* Show "no files yet" only when expanded and no files found */}
+        {!loading && expanded && totalFiles === 0 && (
+          <span style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 400 }}>
+            (no files yet)
+          </span>
+        )}
+      </button>
+
+      {expanded && history !== null && (
+        <div style={{ padding: '10px 16px 14px', background: 'rgba(52,152,219,0.03)' }}>
+          {visitsWithFiles.length === 0 ? (
+            <div style={{
+              fontSize: 12, color: 'var(--text-muted)',
+              padding: '6px 0', display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <span>📁</span> No files have been uploaded in any previous visits.
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 12 }}>
+              {visitsWithFiles.map((visit) => (
+                <div key={String(visit._id)}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
+                    marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4,
+                    display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap',
+                    padding: '5px 8px',
+                    background: 'rgba(124,58,237,0.06)',
+                    border: '1px solid rgba(124,58,237,0.15)',
+                    borderRadius: 6,
+                  }}>
+                    <span style={{ color: '#7c3aed' }}>📅 {visit.date}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>· Dr. {visit.doctorName}</span>
+                    <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-muted)' }}>
+                      · {visit.symptoms?.substring(0, 50)}{visit.symptoms?.length > 50 ? '…' : ''}
+                    </span>
+                    <span style={{
+                      marginLeft: 'auto',
+                      background: 'rgba(124,58,237,0.1)', color: '#7c3aed',
+                      borderRadius: 20, padding: '1px 7px', fontSize: 10,
+                      textTransform: 'none', letterSpacing: 0,
+                    }}>
+                      {visit.files.length} file{visit.files.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {visit.files.map((f) => (
+                    <PastFileRow
+                      key={String(f._id)}
+                      file={f}
+                      patientId={String(visit._id)}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ══════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ══════════════════════════════════════════════════════════════ */
 export default function ReceptionistDashboard() {
-  const { session, logout, getPatients, getUsers, updatePatientStatus, updateFollowUp, addPatient, uploadPatientFile, getPatientFiles, downloadPatientFile, deletePatientFile } = useApp();
-  const [tab,       setTab]      = useState('register');
-  const [patients,  setPatients] = useState([]);
-  const [doctors,   setDoctors]  = useState([]);
-  const [showToken, setShowToken] = useState(null);
-  const [clinicName, setClinicName] = useState(session?.clinicName || '');
+  const {
+    session, logout,
+    getPatients, getUsers,
+    updatePatientStatus, updateFollowUp, addPatient,
+    uploadPatientFile, getPatientFiles, downloadPatientFile, deletePatientFile,
+  } = useApp();
 
-  // ✅ REMOVED: authToken is no longer needed — apiSendTokenSMS handles auth internally
+  const [tab,        setTab]       = useState('register');
+  const [patients,   setPatients]  = useState([]);
+  const [doctors,    setDoctors]   = useState([]);
+  const [showToken,  setShowToken] = useState(null);
+  const [clinicName, setClinicName] = useState(session?.clinicName || '');
 
   const reload = useCallback(async () => {
     try {
@@ -128,10 +297,10 @@ export default function ReceptionistDashboard() {
   const receptionistName = session?.user?.name || 'Receptionist';
 
   const navItems = [
-    { icon: '➕', label: 'Register Patient', active: tab === 'register', onClick: () => setTab('register') },
-    { icon: '📋', label: "Today's Queue",    active: tab === 'queue',    onClick: () => setTab('queue'),    badge: waitingCount || undefined },
-    { icon: '👥', label: 'All Patients',     active: tab === 'all',      onClick: () => setTab('all') },
-    { icon: '📅', label: 'Follow-ups',       active: tab === 'followups',onClick: () => setTab('followups') },
+    { icon: '➕', label: 'Register Patient', active: tab === 'register',  onClick: () => setTab('register') },
+    { icon: '📋', label: "Today's Queue",    active: tab === 'queue',     onClick: () => setTab('queue'),    badge: waitingCount || undefined },
+    { icon: '👥', label: 'All Patients',     active: tab === 'all',       onClick: () => setTab('all') },
+    { icon: '📅', label: 'Follow-ups',       active: tab === 'followups', onClick: () => setTab('followups') },
   ];
 
   async function handleUpdateStatus(patientId, status) {
@@ -178,7 +347,6 @@ export default function ReceptionistDashboard() {
         userRole="Receptionist"
         accent="#0f766e"
       >
-        {/* ✅ REMOVED authToken prop from all children — no longer needed */}
         {tab === 'register'  && <PatientRegister doctors={doctors} patients={patients} onRegistered={handleRegister} />}
         {tab === 'queue'     && <TodayQueue todayQueue={todayQueue} doctors={doctors} onUpdateStatus={handleUpdateStatus} onUpdateFollowUp={handleUpdateFollowUp} onUploadFile={uploadPatientFile} onGetFiles={getPatientFiles} onDownloadFile={downloadPatientFile} onDeleteFile={deletePatientFile} />}
         {tab === 'all'       && <AllPatients patients={patients} />}
@@ -191,25 +359,19 @@ export default function ReceptionistDashboard() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TOKEN POPUP — ✅ FIXED: removed authToken prop
+   TOKEN POPUP
    ══════════════════════════════════════════════════════════════ */
 function TokenPopup({ patient, onClose }) {
   return (
     <Modal title="🎉 Token Generated!" onClose={onClose} width={420}>
       <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
-        {/* Token circle */}
         <div style={{ width: 130, height: 130, borderRadius: 65, background: 'var(--primary)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 8px 32px rgba(15,76,129,0.3)' }}>
           <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, letterSpacing: 1 }}>TOKEN</div>
           <div style={{ color: '#fff', fontSize: 52, fontWeight: 800, lineHeight: 1 }}>{patient.token}</div>
         </div>
-
         <h3 style={{ fontSize: 20, marginBottom: 4 }}>{patient.name}</h3>
         <div style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 4 }}>Dr. {patient.doctorName}</div>
         <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 16 }}>{patient.date} · {patient.time}</div>
-
-        
-
-        {/* Payment summary */}
         <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: '14px', marginBottom: 20, fontSize: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ color: 'var(--text-muted)' }}>Payment Method</span>
@@ -226,7 +388,6 @@ function TokenPopup({ patient, onClose }) {
             </div>
           )}
         </div>
-
         <Btn full size="lg" onClick={onClose}>✓ Done — Register Next Patient</Btn>
       </div>
     </Modal>
@@ -237,7 +398,7 @@ function TokenPopup({ patient, onClose }) {
    PATIENT SEARCH PANEL
    ══════════════════════════════════════════════════════════════ */
 function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
-  const [phone, setPhone]     = useState('');
+  const [phone,   setPhone]   = useState('');
   const [results, setResults] = useState(null);
 
   function handlePhoneChange(val) { setPhone(val); setResults(null); }
@@ -246,7 +407,7 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
     const q = phone.trim().replace(/\s+/g, '');
     if (!q) return;
     const found = patients.filter((p) => {
-      const pPhone = (p.phone || '').replace(/\s+/g, '');
+      const pPhone = (p.phone    || '').replace(/\s+/g, '');
       const pWa    = (p.whatsapp || '').replace(/\s+/g, '');
       return pPhone.includes(q) || pWa.includes(q);
     });
@@ -292,20 +453,32 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
                 onChange={(e) => handlePhoneChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 onKeyDown={(e) => e.key === 'Enter' && search()}
                 placeholder="Enter 10-digit phone number…"
-                style={{ width: '100%', padding: '10px 48px 10px 14px', border: `1.5px solid ${phone.length > 0 && phone.length < 10 ? '#e74c3c' : phone.length === 10 ? '#00a878' : 'var(--border)'}`, borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', color: 'var(--text)', background: 'var(--surface)', boxSizing: 'border-box', transition: 'border-color .15s' }}
+                style={{
+                  width: '100%', padding: '10px 48px 10px 14px',
+                  border: `1.5px solid ${phone.length > 0 && phone.length < 10 ? '#e74c3c' : phone.length === 10 ? '#00a878' : 'var(--border)'}`,
+                  borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none',
+                  color: 'var(--text)', background: 'var(--surface)', boxSizing: 'border-box', transition: 'border-color .15s',
+                }}
               />
               <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, fontWeight: 700, color: phone.length === 10 ? '#00a878' : phone.length > 0 ? '#e74c3c' : 'var(--text-light)' }}>
                 {phone.length}/10
               </span>
             </div>
-            {phone.length > 0 && phone.length < 10 && <div style={{ fontSize: 11, color: '#e74c3c', marginTop: 3 }}>Enter exactly 10 digits ({10 - phone.length} more needed)</div>}
+            {phone.length > 0 && phone.length < 10 && (
+              <div style={{ fontSize: 11, color: '#e74c3c', marginTop: 3 }}>Enter exactly 10 digits ({10 - phone.length} more needed)</div>
+            )}
           </div>
-          <button onClick={search} disabled={!phone.trim() || phone.length !== 10}
-            style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: phone.length === 10 ? 'var(--primary)' : 'var(--border)', color: phone.length === 10 ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: phone.length === 10 ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: '.15s' }}>
+          <button
+            onClick={search}
+            disabled={!phone.trim() || phone.length !== 10}
+            style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: phone.length === 10 ? 'var(--primary)' : 'var(--border)', color: phone.length === 10 ? '#fff' : 'var(--text-muted)', fontWeight: 700, fontSize: 14, cursor: phone.length === 10 ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: '.15s' }}
+          >
             Search
           </button>
-          <button onClick={() => onSelectNew(phone)}
-            style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--primary)', background: 'transparent', color: 'var(--primary)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', transition: '.15s' }}>
+          <button
+            onClick={() => onSelectNew(phone)}
+            style={{ padding: '10px 18px', borderRadius: 10, border: '1.5px solid var(--primary)', background: 'transparent', color: 'var(--primary)', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', transition: '.15s' }}
+          >
             ➕ New Patient
           </button>
         </div>
@@ -329,10 +502,11 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
               </div>
               <div style={{ display: 'grid', gap: 10 }}>
                 {uniquePatients.map((rep) => {
-                  const visits = getVisits(rep);
-                  const lastVisit = visits[0];
+                  const visits       = getVisits(rep);
+                  const lastVisit    = visits[0];
                   const followUpDays = daysUntil(rep.followUpDate);
-                  const hasFollowUp = !!rep.followUpDate;
+                  const hasFollowUp  = !!rep.followUpDate;
+
                   return (
                     <div key={rep._id} style={{ border: '1.5px solid var(--border)', borderRadius: 12, background: 'var(--surface)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
                       <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -342,12 +516,14 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{rep.name}</div>
                           <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                            {rep.age && <span>Age {rep.age}</span>}
+                            {rep.age    && <span>Age {rep.age}</span>}
                             {rep.gender && <span style={{ textTransform: 'capitalize' }}>{rep.gender}</span>}
-                            {rep.phone && <span>📞 {rep.phone}</span>}
+                            {rep.phone  && <span>📞 {rep.phone}</span>}
                           </div>
                           <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <span style={{ fontSize: 11, background: 'var(--surface2)', borderRadius: 20, padding: '2px 8px', color: 'var(--text-muted)' }}>{visits.length} visit{visits.length !== 1 ? 's' : ''}</span>
+                            <span style={{ fontSize: 11, background: 'var(--surface2)', borderRadius: 20, padding: '2px 8px', color: 'var(--text-muted)' }}>
+                              {visits.length} visit{visits.length !== 1 ? 's' : ''}
+                            </span>
                             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Last: {lastVisit?.date}</span>
                             {hasFollowUp && followUpDays !== null && (
                               <span style={{ fontSize: 11, fontWeight: 700, color: followUpBadgeStyle(followUpDays).color, background: followUpBadgeStyle(followUpDays).bg, border: `1px solid ${followUpBadgeStyle(followUpDays).border}`, borderRadius: 20, padding: '2px 8px' }}>
@@ -356,17 +532,22 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
                             )}
                           </div>
                         </div>
-                        <button onClick={() => onSelectReturning(rep, visits)}
-                          style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: hasFollowUp ? '#7c3aed' : 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                        <button
+                          onClick={() => onSelectReturning(rep, visits)}
+                          style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: hasFollowUp ? '#7c3aed' : 'var(--primary)', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+                        >
                           {hasFollowUp ? '📅 Follow-up Visit' : '🔄 Returning Patient'}
                         </button>
                       </div>
+
                       {lastVisit && (
                         <div style={{ padding: '10px 16px', background: 'var(--surface2)', borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                           <span>🩺 Last complaint: <strong style={{ color: 'var(--text)' }}>{lastVisit.symptoms?.substring(0, 60)}{lastVisit.symptoms?.length > 60 ? '…' : ''}</strong></span>
                           <span>👨‍⚕️ Dr. {lastVisit.doctorName}</span>
                         </div>
                       )}
+
+                      {rep.phone && <PastFilesPreview phone={rep.phone} />}
                     </div>
                   );
                 })}
@@ -385,17 +566,20 @@ function PatientSearchPanel({ patients, onSelectReturning, onSelectNew }) {
 function ReturningPatientPanel({ patient, visits, doctors, patients, onRegistered, onBack }) {
   const [showHistory, setShowHistory] = useState(false);
   const init = {
-    name: patient.name || '', age: patient.age || '',
+    name:     patient.name    || '',
+    age:      patient.age     || '',
     phone:    (patient.phone    || '').replace(/\D/g, '').slice(0, 10),
     whatsapp: (patient.whatsapp || '').replace(/\D/g, '').slice(0, 10),
-    gender: patient.gender || 'male', symptoms: '',
-    doctorId: String(patient.doctorId || ''), totalFee: '', paid: '',
+    gender:   patient.gender  || 'male',
+    symptoms: '',
+    doctorId: String(patient.doctorId || ''),
+    totalFee: '', paid: '',
     notes: '', paymentMethod: 'cash',
   };
   const [form, setForm] = useState(init);
   const [err,  setErr]  = useState('');
   const [busy, setBusy] = useState(false);
-  const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const f    = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   const dues = Math.max(0, (parseFloat(form.totalFee) || 0) - (parseFloat(form.paid) || 0));
 
   async function register() {
@@ -406,7 +590,15 @@ function ReturningPatientPanel({ patient, visits, doctors, patients, onRegistere
     if (form.whatsapp && form.whatsapp.length !== 10) { setErr('WhatsApp number must be exactly 10 digits.'); return; }
     setBusy(true); setErr('');
     try {
-      await onRegistered({ name: form.name.trim(), age: form.age, phone: form.phone, whatsapp: form.whatsapp, gender: form.gender, symptoms: form.symptoms.trim(), notes: form.notes, doctorId: form.doctorId, totalFee: parseFloat(form.totalFee) || 0, paid: parseFloat(form.paid) || 0, paymentMethod: form.paymentMethod, isReturnVisit: true });
+      await onRegistered({
+        name: form.name.trim(), age: form.age, phone: form.phone,
+        whatsapp: form.whatsapp, gender: form.gender,
+        symptoms: form.symptoms.trim(), notes: form.notes,
+        doctorId: form.doctorId,
+        totalFee: parseFloat(form.totalFee) || 0,
+        paid:     parseFloat(form.paid)     || 0,
+        paymentMethod: form.paymentMethod, isReturnVisit: true,
+      });
       setForm(init);
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -418,7 +610,9 @@ function ReturningPatientPanel({ patient, visits, doctors, patients, onRegistere
   return (
     <div>
       <div style={{ background: hasFollowUp ? 'linear-gradient(135deg, rgba(124,58,237,0.10), rgba(79,70,229,0.06))' : 'linear-gradient(135deg, rgba(15,118,110,0.09), rgba(0,184,148,0.05))', border: `1.5px solid ${hasFollowUp ? 'rgba(124,58,237,0.25)' : 'rgba(15,118,110,0.2)'}`, borderRadius: 14, padding: '18px 20px', marginBottom: 22, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 26, background: hasFollowUp ? '#7c3aed' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>{patient.name?.charAt(0).toUpperCase()}</div>
+        <div style={{ width: 52, height: 52, borderRadius: 26, background: hasFollowUp ? '#7c3aed' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 22, flexShrink: 0 }}>
+          {patient.name?.charAt(0).toUpperCase()}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontWeight: 800, fontSize: 18 }}>{patient.name}</span>
@@ -428,21 +622,25 @@ function ReturningPatientPanel({ patient, visits, doctors, patients, onRegistere
             }
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {patient.age && <span>Age {patient.age}</span>}
+            {patient.age    && <span>Age {patient.age}</span>}
             {patient.gender && <span style={{ textTransform: 'capitalize' }}>{patient.gender}</span>}
-            {patient.phone && <span>📞 {patient.phone}</span>}
+            {patient.phone  && <span>📞 {patient.phone}</span>}
             <span>{visits.length} previous visit{visits.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button onClick={() => setShowHistory((v) => !v)} style={{ padding: '8px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{showHistory ? '🙈 Hide History' : '📋 View History'}</button>
+          <button onClick={() => setShowHistory((v) => !v)} style={{ padding: '8px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {showHistory ? '🙈 Hide History' : '📋 View History'}
+          </button>
           <button onClick={onBack} style={{ padding: '8px 14px', borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>← Back</button>
         </div>
       </div>
 
       {showHistory && (
         <div style={{ marginBottom: 22, border: '1.5px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '10px 16px', background: 'var(--surface2)', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 13, color: 'var(--text-muted)' }}>📋 Visit History ({visits.length} visits)</div>
+          <div style={{ padding: '10px 16px', background: 'var(--surface2)', borderBottom: '1px solid var(--border)', fontWeight: 700, fontSize: 13, color: 'var(--text-muted)' }}>
+            📋 Visit History ({visits.length} visits)
+          </div>
           {visits.map((v, i) => (
             <div key={v._id} style={{ padding: '12px 16px', borderBottom: i < visits.length - 1 ? '1px solid var(--border)' : 'none', display: 'flex', gap: 12, flexWrap: 'wrap', background: i % 2 === 0 ? 'var(--surface)' : 'var(--surface2)' }}>
               <div style={{ width: 28, height: 28, borderRadius: 14, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'var(--primary)', flexShrink: 0 }}>{v.token}</div>
@@ -472,11 +670,11 @@ function ReturningPatientPanel({ patient, visits, doctors, patients, onRegistere
               </Select>
             </div>
             <div className="rp-phone-wa" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <PhoneInput label="Phone" value={form.phone} onChange={(v) => f('phone', v)} />
+              <PhoneInput label="Phone"    value={form.phone}    onChange={(v) => f('phone',    v)} />
               <PhoneInput label="WhatsApp" value={form.whatsapp} onChange={(v) => f('whatsapp', v)} />
             </div>
             <Textarea label="Symptoms / Complaint *" value={form.symptoms} onChange={(e) => f('symptoms', e.target.value)} placeholder="What brings the patient today?" rows={3} />
-            <Textarea label="Additional Notes" value={form.notes} onChange={(e) => f('notes', e.target.value)} placeholder="Any other information…" rows={2} />
+            <Textarea label="Additional Notes"       value={form.notes}    onChange={(e) => f('notes',    e.target.value)} placeholder="Any other information…" rows={2} />
           </div>
         </Card>
         <div style={{ display: 'grid', gap: 16 }}>
@@ -508,9 +706,11 @@ function DoctorSelector({ doctors, patients, form, f }) {
             const limit        = doc.dailyTokenLimit ?? 0;
             const limitReached = limit > 0 && todayCount >= limit;
             return (
-              <div key={doc._id}
+              <div
+                key={doc._id}
                 onClick={() => { if (!limitReached) { f('doctorId', String(doc._id)); if (doc.fee) f('totalFee', String(doc.fee)); } }}
-                style={{ border: `2px solid ${isSelected ? 'var(--primary)' : limitReached ? '#e74c3c' : 'var(--border)'}`, borderRadius: 10, padding: '12px 14px', cursor: limitReached ? 'not-allowed' : 'pointer', background: isSelected ? 'var(--primary-light)' : limitReached ? 'rgba(231,76,60,0.04)' : 'var(--surface)', opacity: limitReached ? 0.7 : 1, transition: '.15s' }}>
+                style={{ border: `2px solid ${isSelected ? 'var(--primary)' : limitReached ? '#e74c3c' : 'var(--border)'}`, borderRadius: 10, padding: '12px 14px', cursor: limitReached ? 'not-allowed' : 'pointer', background: isSelected ? 'var(--primary-light)' : limitReached ? 'rgba(231,76,60,0.04)' : 'var(--surface)', opacity: limitReached ? 0.7 : 1, transition: '.15s' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <div>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{doc.name}</div>
@@ -539,7 +739,10 @@ function PaymentCard({ form, f, dues }) {
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>Payment Method</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            {[{ value: 'cash', label: '💵 Cash', color: '#00a878', bg: 'rgba(0,184,148,0.10)', border: 'rgba(0,184,148,0.40)' }, { value: 'upi', label: '📲 UPI', color: '#7c3aed', bg: 'rgba(124,58,237,0.10)', border: 'rgba(124,58,237,0.40)' }].map((opt) => {
+            {[
+              { value: 'cash', label: '💵 Cash', color: '#00a878', bg: 'rgba(0,184,148,0.10)',   border: 'rgba(0,184,148,0.40)' },
+              { value: 'upi',  label: '📲 UPI',  color: '#7c3aed', bg: 'rgba(124,58,237,0.10)', border: 'rgba(124,58,237,0.40)' },
+            ].map((opt) => {
               const selected = form.paymentMethod === opt.value;
               return (
                 <button key={opt.value} type="button" onClick={() => f('paymentMethod', opt.value)}
@@ -550,8 +753,8 @@ function PaymentCard({ form, f, dues }) {
             })}
           </div>
         </div>
-        <Input label="Total Fee (Rs.)" type="number" value={form.totalFee} onChange={(e) => f('totalFee', e.target.value)} placeholder="0" />
-        <Input label="Amount Paid Now (Rs.)" type="number" value={form.paid} onChange={(e) => f('paid', e.target.value)} placeholder="0" />
+        <Input label="Total Fee (Rs.)"       type="number" value={form.totalFee} onChange={(e) => f('totalFee', e.target.value)} placeholder="0" />
+        <Input label="Amount Paid Now (Rs.)" type="number" value={form.paid}     onChange={(e) => f('paid',     e.target.value)} placeholder="0" />
         <div style={{ background: dues > 0 ? 'var(--danger-light)' : 'var(--success-light)', borderRadius: 10, padding: '12px 14px' }}>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Dues / Remaining</div>
           <div style={{ fontSize: 24, fontWeight: 700, color: dues > 0 ? 'var(--danger)' : 'var(--success)' }}>Rs. {dues.toLocaleString()}</div>
@@ -565,14 +768,14 @@ function PaymentCard({ form, f, dues }) {
    PATIENT REGISTER
    ══════════════════════════════════════════════════════════════ */
 function PatientRegister({ doctors, patients, onRegistered }) {
-  const [mode, setMode]                         = useState('search');
-  const [prefillPhone, setPrefillPhone]         = useState('');
+  const [mode,             setMode]             = useState('search');
+  const [prefillPhone,     setPrefillPhone]     = useState('');
   const [returningPatient, setReturningPatient] = useState(null);
   const [returningVisits,  setReturningVisits]  = useState([]);
 
-  function handleSelectNew(phone = '')          { setPrefillPhone(phone); setMode('new'); }
+  function handleSelectNew(phone = '')            { setPrefillPhone(phone); setMode('new'); }
   function handleSelectReturning(patient, visits) { setReturningPatient(patient); setReturningVisits(visits); setMode('returning'); }
-  function handleBack()                         { setMode('search'); setReturningPatient(null); setReturningVisits([]); }
+  function handleBack()                           { setMode('search'); setReturningPatient(null); setReturningVisits([]); }
 
   if (mode === 'returning' && returningPatient) {
     return <ReturningPatientPanel patient={returningPatient} visits={returningVisits} doctors={doctors} patients={patients} onRegistered={onRegistered} onBack={handleBack} />;
@@ -589,11 +792,17 @@ function PatientRegister({ doctors, patients, onRegistered }) {
 
 /* ── New Patient Form ────────────────────────────────────────── */
 function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack }) {
-  const init = { name: '', age: '', phone: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), gender: 'male', symptoms: '', doctorId: '', totalFee: '', paid: '', notes: '', paymentMethod: 'cash' };
+  const init = {
+    name: '', age: '',
+    phone:    (prefillPhone || '').replace(/\D/g, '').slice(0, 10),
+    whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10),
+    gender: 'male', symptoms: '', doctorId: '',
+    totalFee: '', paid: '', notes: '', paymentMethod: 'cash',
+  };
   const [form, setForm] = useState(init);
   const [err,  setErr]  = useState('');
   const [busy, setBusy] = useState(false);
-  const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const f    = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   const dues = Math.max(0, (parseFloat(form.totalFee) || 0) - (parseFloat(form.paid) || 0));
 
   async function register() {
@@ -604,7 +813,15 @@ function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack 
     if (form.whatsapp && form.whatsapp.length !== 10) { setErr('WhatsApp number must be exactly 10 digits.'); return; }
     setBusy(true); setErr('');
     try {
-      await onRegistered({ name: form.name.trim(), age: form.age, phone: form.phone, whatsapp: form.whatsapp, gender: form.gender, symptoms: form.symptoms.trim(), notes: form.notes, doctorId: form.doctorId, totalFee: parseFloat(form.totalFee) || 0, paid: parseFloat(form.paid) || 0, paymentMethod: form.paymentMethod });
+      await onRegistered({
+        name: form.name.trim(), age: form.age, phone: form.phone,
+        whatsapp: form.whatsapp, gender: form.gender,
+        symptoms: form.symptoms.trim(), notes: form.notes,
+        doctorId: form.doctorId,
+        totalFee: parseFloat(form.totalFee) || 0,
+        paid:     parseFloat(form.paid)     || 0,
+        paymentMethod: form.paymentMethod,
+      });
       setForm(init);
     } catch (e) { setErr(e.message); }
     finally { setBusy(false); }
@@ -635,11 +852,11 @@ function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack 
               </Select>
             </div>
             <div className="rp-phone-wa" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <PhoneInput label="Phone" value={form.phone} onChange={(v) => f('phone', v)} />
+              <PhoneInput label="Phone"    value={form.phone}    onChange={(v) => f('phone',    v)} />
               <PhoneInput label="WhatsApp" value={form.whatsapp} onChange={(v) => f('whatsapp', v)} />
             </div>
             <Textarea label="Symptoms / Complaint *" value={form.symptoms} onChange={(e) => f('symptoms', e.target.value)} placeholder="Describe patient's symptoms..." rows={3} />
-            <Textarea label="Additional Notes" value={form.notes} onChange={(e) => f('notes', e.target.value)} placeholder="Any other information..." rows={2} />
+            <Textarea label="Additional Notes"       value={form.notes}    onChange={(e) => f('notes',    e.target.value)} placeholder="Any other information..." rows={2} />
           </div>
         </Card>
         <div style={{ display: 'grid', gap: 16 }}>
@@ -660,11 +877,10 @@ const STATUS_ORDER = { waiting: 0, called: 1, done: 2 };
 function sortQueue(patients) {
   return [...patients].sort((a, b) => {
     const d = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-    return d !== 0 ? d : b.token - a.token;
+    return d !== 0 ? d : a.token - b.token;
   });
 }
 
-// ✅ FIXED: removed authToken prop
 function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile }) {
   const sorted  = sortQueue(todayQueue);
   const waiting = sorted.filter((p) => p.status === 'waiting');
@@ -699,8 +915,9 @@ function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onU
               <Badge color="blue">{docQ.length} patients</Badge>
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
-              {/* ✅ FIXED: no authToken prop passed to QueueCard */}
-              {activeQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />)}
+              {activeQ.map((p) => (
+                <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />
+              ))}
               {activeQ.length > 0 && doneQ.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0' }}>
                   <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -708,7 +925,9 @@ function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onU
                   <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                 </div>
               )}
-              {doneQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />)}
+              {doneQ.map((p) => (
+                <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />
+              ))}
             </div>
           </div>
         );
@@ -719,119 +938,71 @@ function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onU
   );
 }
 
-/* ── Queue Card — ✅ FIXED: removed authToken prop ─────────────── */
+/* ── Queue Card ──────────────────────────────────────────────── */
 function QueueCard({ patient: p, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile }) {
   const pid = p._id || p.id;
   const [showFollowUp, setShowFollowUp] = useState(false);
-  const [showFiles, setShowFiles] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [showFiles,    setShowFiles]    = useState(false);
+  const [files,        setFiles]        = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const statusBg = { waiting: 'var(--surface)', called: '#fffbeb', done: 'var(--surface2)' };
   const days = daysUntil(p.followUpDate);
 
-  // Load files when toggling
+  // Load files when panel opens
   useEffect(() => {
-    if (showFiles && files.length === 0 && !loadingFiles) {
-      loadFiles();
-    }
+    if (showFiles && files.length === 0 && !loadingFiles) loadFiles();
   }, [showFiles]);
 
-// Update loadFiles function
-async function loadFiles() {
-  setLoadingFiles(true);
-  try {
-    const result = await onGetFiles(pid);
-    let filesArray = [];
-    
-    if (Array.isArray(result)) {
-      filesArray = result;
-    } else if (result && result.files && Array.isArray(result.files)) {
-      filesArray = result.files;
-    }
-    
-    setFiles(filesArray);
-  } catch (err) {
-    console.error('Failed to load files:', err);
-    setFiles([]);
-  } finally {
-    setLoadingFiles(false);
-  }
-}
-
-// Update handleUploadFile function
-async function handleUploadFile(patientId, file) {
-  try {
-    await onUploadFile(patientId, file);
-    // Reload files after upload
-    setTimeout(async () => {
+  async function loadFiles() {
+    setLoadingFiles(true);
+    try {
       const result = await onGetFiles(pid);
-      let filesArray = [];
-      
-      if (Array.isArray(result)) {
-        filesArray = result;
-      } else if (result && result.files && Array.isArray(result.files)) {
-        filesArray = result.files;
-      }
-      
-      setFiles(filesArray);
-    }, 500);
-  } catch (err) {
-    throw err;
-  }
-}
-
-// Update handleDeleteFile function
-async function handleDeleteFile(patientId, fileId) {
-  try {
-    await onDeleteFile(patientId, fileId);
-    // Reload files after delete
-    const result = await onGetFiles(pid);
-    let filesArray = [];
-    
-    if (Array.isArray(result)) {
-      filesArray = result;
-    } else if (result && result.files && Array.isArray(result.files)) {
-      filesArray = result.files;
+      // result is already an array from apiGetPatientFiles
+      setFiles(Array.isArray(result) ? result : (result?.files || []));
+    } catch (err) {
+      console.error('Failed to load files:', err);
+      setFiles([]);
+    } finally {
+      setLoadingFiles(false);
     }
-    
-    setFiles(filesArray);
-  } catch (err) {
-    throw err;
   }
-}
-// Update handleDownloadFile to use correct ID
-async function handleDownloadFile(pid,fileId) {
-  
-  // Make sure we're not mixing up patientId and fileId
-  if (!fileId || fileId === pid) {
-    console.error('Invalid file ID:', fileId);
-    throw new Error('Invalid file ID');
+
+  // ── FIX: removed setTimeout race condition ────────────────────
+  async function handleUploadFile(patientId, file) {
+    await onUploadFile(patientId, file);
+    // Re-fetch immediately after upload completes (no setTimeout)
+    const result = await onGetFiles(pid);
+    setFiles(Array.isArray(result) ? result : (result?.files || []));
   }
-  return onDownloadFile(pid, fileId);
-}
+
+  async function handleDeleteFile(patientId, fileId) {
+    await onDeleteFile(patientId, fileId);
+    const result = await onGetFiles(pid);
+    setFiles(Array.isArray(result) ? result : (result?.files || []));
+  }
+
+  async function handleDownloadFile(patientId, fileId) {
+    if (!fileId || fileId === patientId) throw new Error('Invalid file ID');
+    return onDownloadFile(patientId, fileId);
+  }
 
   return (
     <div style={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
       <div style={{ background: statusBg[p.status], padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <TokenBadge token={p.token} size="md" status={p.status} />
-
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 15, textDecoration: p.status === 'done' ? 'line-through' : 'none', color: p.status === 'done' ? 'var(--text-muted)' : 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.symptoms?.substring(0, 50)}{p.symptoms?.length > 50 ? '…' : ''}</div>
           <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 2, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <span>🕐 {p.time}</span>
             <PaymentBadge method={p.paymentMethod} />
-            {p.phone && <span style={{ color: 'var(--text-muted)' }}>📞 {p.phone}</span>}
+            {p.phone  && <span style={{ color: 'var(--text-muted)' }}>📞 {p.phone}</span>}
             {p.dues > 0 && <span style={{ color: 'var(--danger)', fontWeight: 600 }}>⚠️ Due: Rs.{p.dues}</span>}
             {p.isReturnVisit && <span style={{ fontSize: 10, background: 'rgba(0,184,148,0.1)', color: '#00a878', border: '1px solid rgba(0,184,148,0.25)', borderRadius: 20, padding: '1px 7px', fontWeight: 700 }}>🔄 Return</span>}
             {p.followUpDate && days !== null && <span style={{ color: followUpBadgeStyle(days).color, fontWeight: 600 }}>📅 {p.followUpDate} ({followUpBadgeStyle(days).label})</span>}
           </div>
         </div>
-
-        {/* ── Action buttons ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
-          
-
           {p.dues > 0 && <Badge color="red">Due: Rs.{p.dues}</Badge>}
           <Badge color={p.status === 'called' ? 'yellow' : p.status === 'done' ? 'gray' : 'blue'}>
             {p.status === 'waiting' ? '⏳ Waiting' : p.status === 'called' ? '📢 Called' : '✓ Done'}
@@ -854,14 +1025,18 @@ async function handleDownloadFile(pid,fileId) {
       )}
       {showFiles && (
         <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)', background: 'rgba(52,152,219,0.02)' }}>
-          <FileUploadSection
-  patientId={pid}
-  files={files}
-  onUpload={handleUploadFile}
-  onDelete={handleDeleteFile}
-  onDownload={handleDownloadFile}
-  disabled={loadingFiles}
-/>
+          {loadingFiles ? (
+            <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-muted)', fontSize: 13 }}>⏳ Loading files…</div>
+          ) : (
+            <FileUploadSection
+              patientId={pid}
+              files={files}
+              onUpload={handleUploadFile}
+              onDelete={handleDeleteFile}
+              onDownload={handleDownloadFile}
+              disabled={loadingFiles}
+            />
+          )}
         </div>
       )}
     </div>
@@ -900,8 +1075,16 @@ function FollowUpInlineEditor({ patient: p, onSave, onCancel }) {
           style={{ padding: '7px 16px', borderRadius: 8, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 700, cursor: busy || !date ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: !date ? 0.6 : 1 }}>
           {busy ? '…' : '✓ Save'}
         </button>
-        {p.followUpDate && <button onClick={() => onSave('', '')} disabled={busy} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fff', color: '#e74c3c', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>🗑 Clear</button>}
-        <button onClick={onCancel} style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+        {p.followUpDate && (
+          <button onClick={() => onSave('', '')} disabled={busy}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fff', color: '#e74c3c', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            🗑 Clear
+          </button>
+        )}
+        <button onClick={onCancel}
+          style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid #d0dce8', background: '#fff', color: '#4a6278', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Cancel
+        </button>
       </div>
       {err && <div style={{ fontSize: 12, color: '#e74c3c', marginTop: 6 }}>{err}</div>}
     </div>
@@ -911,7 +1094,10 @@ function FollowUpInlineEditor({ patient: p, onSave, onCancel }) {
 /* ── Follow-ups Tab ──────────────────────────────────────────── */
 function FollowUpsTab({ patients, onUpdateFollowUp }) {
   const [editingId, setEditingId] = useState(null);
-  const upcoming = patients.filter((p) => p.followUpDate).map((p) => ({ ...p, _days: daysUntil(p.followUpDate) })).sort((a, b) => a._days - b._days);
+  const upcoming = patients
+    .filter((p) => p.followUpDate)
+    .map((p) => ({ ...p, _days: daysUntil(p.followUpDate) }))
+    .sort((a, b) => a._days - b._days);
   const urgent = upcoming.filter((p) => p._days <= 3);
   const rest   = upcoming.filter((p) => p._days > 3);
 
@@ -931,9 +1117,12 @@ function FollowUpsTab({ patients, onUpdateFollowUp }) {
             <div style={{ fontSize: 13, fontWeight: 700, color: style.color }}>{p.followUpDate}</div>
             <div style={{ fontSize: 11, color: style.color, fontWeight: 600, marginTop: 1 }}>{style.label}</div>
           </div>
-          <button onClick={() => setEditingId(editingId === pid ? null : pid)} style={{ background: 'none', border: '1px solid #c5d5e8', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 13, color: '#7c3aed' }}>✏️</button>
+          <button onClick={() => setEditingId(editingId === pid ? null : pid)}
+            style={{ background: 'none', border: '1px solid #c5d5e8', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 13, color: '#7c3aed' }}>✏️</button>
         </div>
-        {editingId === pid && <FollowUpInlineEditor patient={p} onSave={async (date, note) => { await onUpdateFollowUp(pid, date, note); setEditingId(null); }} onCancel={() => setEditingId(null)} />}
+        {editingId === pid && (
+          <FollowUpInlineEditor patient={p} onSave={async (date, note) => { await onUpdateFollowUp(pid, date, note); setEditingId(null); }} onCancel={() => setEditingId(null)} />
+        )}
       </div>
     );
   }
@@ -959,8 +1148,18 @@ function FollowUpsTab({ patients, onUpdateFollowUp }) {
               <span style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>{upcoming.length} total</span>
             </div>
           </div>
-          {urgent.length > 0 && (<><div style={{ padding: '7px 14px', background: 'rgba(231,76,60,0.07)', borderBottom: '1px solid rgba(231,76,60,0.15)', fontSize: 11, fontWeight: 700, color: '#c0392b', textTransform: 'uppercase', letterSpacing: 0.4 }}>⚠️ Needs attention soon</div>{urgent.map(renderRow)}</>)}
-          {rest.length > 0 && (<><div style={{ padding: '7px 14px', background: 'var(--surface2)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>📆 Upcoming</div>{rest.map(renderRow)}</>)}
+          {urgent.length > 0 && (
+            <>
+              <div style={{ padding: '7px 14px', background: 'rgba(231,76,60,0.07)', borderBottom: '1px solid rgba(231,76,60,0.15)', fontSize: 11, fontWeight: 700, color: '#c0392b', textTransform: 'uppercase', letterSpacing: 0.4 }}>⚠️ Needs attention soon</div>
+              {urgent.map(renderRow)}
+            </>
+          )}
+          {rest.length > 0 && (
+            <>
+              <div style={{ padding: '7px 14px', background: 'var(--surface2)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.4 }}>📆 Upcoming</div>
+              {rest.map(renderRow)}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -54,6 +54,50 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// ── GET /api/patients/history/:phone  — all visits + file metadata for a phone
+// ⚠️  MUST be defined BEFORE /:id routes so Express doesn't treat "history" as an id
+router.get('/history/:phone', auth, async (req, res) => {
+  try {
+    const { clinicId } = req.user;
+    const { phone } = req.params;
+
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required.' });
+    }
+
+    // Find all visits for this phone number in this clinic, newest first
+    const visits = await Patient.find({ clinicId, phone })
+      .sort({ date: -1, token: -1 })
+      .lean();
+
+    // Return visit info + file metadata only (no binary data)
+    const visitsWithFiles = visits.map((v) => ({
+      _id:        v._id,
+      date:       v.date,
+      time:       v.time,
+      token:      v.token,
+      symptoms:   v.symptoms,
+      notes:      v.notes,
+      doctorName: v.doctorName,
+      doctorId:   v.doctorId,
+      status:     v.status,
+      files: (v.files || []).map((f) => ({
+        _id:        f._id,
+        filename:   f.filename,
+        mimeType:   f.mimeType,
+        size:       f.size,
+        uploadedBy: f.uploadedBy,
+        uploadedAt: f.uploadedAt,
+      })),
+    }));
+
+    res.json({ success: true, visits: visitsWithFiles });
+  } catch (err) {
+    console.error('History fetch error:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ── POST /api/patients  — add new patient + assign token ─────────────────────
 router.post('/', auth, async (req, res) => {
   try {
@@ -163,7 +207,7 @@ router.patch('/:id/payment', auth, async (req, res) => {
       { new: true }
     );
 
-    if (!patient) return res.status(404).json({ message: err.message });
+    if (!patient) return res.status(404).json({ message: 'Patient not found.' });
     res.json(patient);
   } catch (err) {
     res.status(500).json({ message: err.message });

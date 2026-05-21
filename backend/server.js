@@ -1,101 +1,66 @@
-import 'dotenv/config.js';
+import 'dotenv/config';
+import mongoose from 'mongoose';
+import http from 'http';
 import express from 'express';
 import cors from 'cors';
-import http from 'http';
 import { Server } from 'socket.io';
 import imsApp from './ims/app.js';
-import clinicModule from './clinic/app.js';
+import clinicApp from './clinic/app.js';
+import env from './clinic/config/env.js';
 
 const mainApp = express();
-const server = http.createServer(mainApp);
+const server  = http.createServer(mainApp);
 
-// ========== SOCKET.IO SETUP (for Clinic queue system) ==========
+// ── Socket.IO (clinic queue system) ──────────────────────────────
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
-
-// Make io available to clinic routes
 mainApp.set('io', io);
 
-// Socket connection handling (original clinic functionality)
 io.on('connection', (socket) => {
-  console.log('🔌 Clinic client connected:', socket.id);
-  
+  console.log('🔌 Client connected:', socket.id);
   socket.on('join_queue', ({ clinicId, doctorId, date }) => {
     const room = `queue_${clinicId}_${doctorId}_${date}`;
     socket.join(room);
-    console.log(`📡 Socket ${socket.id} joined room: ${room}`);
   });
-  
   socket.on('disconnect', () => {
     console.log('❌ Client disconnected:', socket.id);
   });
 });
 
-// ========== MIDDLEWARE ==========
-mainApp.use(cors({ origin: "*", credentials: true }));
+// ── Middleware ────────────────────────────────────────────────────
+mainApp.use(cors({ origin: '*', credentials: true }));
 mainApp.use(express.json());
 
-// ========== MOUNT IMS SYSTEM ==========
-// IMS expects routes at /api/v1/*
-mainApp.use("/api/ims", imsApp);
-// IMS endpoints become: /api/ims/api/v1/*
+// ── Mount both apps ───────────────────────────────────────────────
+// IMS:    /ims/api/v1/*
+// Clinic: /api/clinic/*
+mainApp.use('/ims',         imsApp);
+mainApp.use('/api/clinic',  clinicApp);
 
-// ========== MOUNT CLINIC SYSTEM ==========
-// Initialize clinic database first
-const initClinic = async () => {
-  const { app: clinicApp, initClinicDB } = clinicModule;
-  await initClinicDB();
-  
-  // Mount clinic routes at /api/clinic
-  mainApp.use("/api/clinic", clinicApp);
-  // Clinic endpoints become: /api/clinic/auth, /api/clinic/patients, etc.
-  
-  console.log('✅ Clinic system mounted at /api/clinic');
-};
-
-// ========== HEALTH CHECKS ==========
-mainApp.get("/api/health", (req, res) => {
-  res.json({ 
-    status: "OK", 
-    timestamp: new Date().toISOString(),
-    systems: {
-      ims: "/api/ims/api/v1",
-      clinic: "/api/clinic"
-    },
-    websockets: true
+mainApp.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    endpoints: { ims: '/ims/api/v1', clinic: '/api/clinic' },
+    websockets: true,
   });
 });
 
-mainApp.get("/api/ims/health", (req, res) => {
-  res.json({ status: "IMS OK" });
-});
+// ── Single MongoDB connection → start server ──────────────────────
+const PORT = env.port || 5000;
 
-// ========== START SERVER ==========
-const PORT = process.env.PORT || 5000;
-
-const startServer = async () => {
-  try {
-    // Initialize IMS database
-    const { default: connectIMS } = await import('./ims/src/config/db.js');
-    await connectIMS();
-    console.log('✅ IMS Database connected');
-    
-    // Initialize Clinic system
-    await initClinic();
-    
-    // Start listening
+mongoose
+  .connect(env.mongoUri)
+  .then(() => {
+    console.log(`✅ MongoDB connected (shared): ${mongoose.connection.host}`);
     server.listen(PORT, () => {
-      console.log(`\n🚀 MERGED SERVER running on port ${PORT}`);
-      console.log(`📦 IMS API: http://localhost:${PORT}/api/ims/api/v1`);
-      console.log(`🏥 Clinic API: http://localhost:${PORT}/api/clinic`);
-      console.log(`🔌 WebSockets: ENABLED (Clinic queue system)`);
-      console.log(`💚 Health: http://localhost:${PORT}/api/health\n`);
+      console.log(`🚀 Server on port ${PORT}`);
+      console.log(`📦 IMS:    http://localhost:${PORT}/ims/api/v1`);
+      console.log(`🏥 Clinic: http://localhost:${PORT}/api/clinic`);
     });
-  } catch (error) {
-    console.error("Server failed to start:", error);
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB failed:', err.message);
     process.exit(1);
-  }
-};
-
-startServer();
+  });
