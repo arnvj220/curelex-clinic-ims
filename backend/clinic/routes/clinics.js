@@ -4,7 +4,7 @@ import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ── GET /api/clinics/me  — get own clinic ────────────────────────
+// ── GET /api/clinics/me ──────────────────────────────────────────
 router.get('/me', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin')
@@ -18,16 +18,21 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// ── PUT /api/clinics/me  — update clinic settings ────────────────
+// ── PUT /api/clinics/me ──────────────────────────────────────────
 router.put('/me', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin')
       return res.status(403).json({ message: 'Admin only.' });
 
-    const { name, owner, phone, city } = req.body;
+    const {
+      name, owner, phone, city,
+      email, address, district, state,
+      pincode, subDistrict,
+    } = req.body;
+
     const clinic = await Clinic.findByIdAndUpdate(
       req.user.clinicId,
-      { name, owner, phone, city },
+      { name, owner, phone, city, email, address, district, state, pincode, subDistrict },
       { new: true }
     ).select('-password');
 
@@ -37,14 +42,16 @@ router.put('/me', auth, async (req, res) => {
   }
 });
 
-// ── POST /api/clinics/activate-plan  — choose/activate plan ──────
+// ── POST /api/clinics/activate-plan ─────────────────────────────
 router.post('/activate-plan', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin')
       return res.status(403).json({ message: 'Admin only.' });
 
     const { plan } = req.body;
-    if (!['basic', 'pro'].includes(plan))
+
+    // ✅ Fixed: now accepts lite, plus, and pro
+    if (!['lite', 'plus', 'pro'].includes(plan))
       return res.status(400).json({ message: 'Invalid plan.' });
 
     const now = new Date();

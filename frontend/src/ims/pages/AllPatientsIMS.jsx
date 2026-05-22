@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 const CLINIC_BASE = import.meta.env.VITE_CLINIC_API_URL
   ? `${import.meta.env.VITE_CLINIC_API_URL}`
-  : '/api/clinic';
+  : '/api';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 function getTodayIST() {
@@ -12,11 +12,10 @@ function getTodayIST() {
 }
 
 function authHeader() {
-  // Try all possible token keys — IMS token, clinic token, fallback
   const token =
-    localStorage.getItem('ims_token') ||
-    localStorage.getItem('clinic_token') ||
-    localStorage.getItem('token') ||
+    localStorage.getItem('clinic_token') ||  // ← clinic token first
+    localStorage.getItem('ims_token')     ||
+    localStorage.getItem('token')         ||
     sessionStorage.getItem('token') || '';
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
