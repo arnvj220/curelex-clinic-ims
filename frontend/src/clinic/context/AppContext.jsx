@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import {
   apiLogout,
   getSession,
+  removeToken,
+  removeSession,
   setSession as persistSession,
   apiGetMyClinic,
   apiUpdateMyClinic,
@@ -25,17 +27,23 @@ import {
 
 const AppContext = createContext(null);
 
-// ─── Helper: normalize whatever the backend sends into 'lite'|'plus'|'pro'|null
+// ── Helper: normalize plan string into 'lite'|'plus'|'pro'|null ──────────────
 function normalizePlan(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase().trim();
-  // Handle "clinic_pro", "Clinic Pro", "PRO", "pro" etc.
   if (s.includes('pro'))  return 'pro';
   if (s.includes('plus')) return 'plus';
   if (s.includes('lite')) return 'lite';
-  // Handle exact keys
   if (['pro', 'plus', 'lite'].includes(s)) return s;
   return null;
+}
+
+// ── Helper: clear all auth from localStorage ──────────────────────────────────
+function clearAllAuth() {
+  removeToken();
+  removeSession();
+  localStorage.removeItem('ims_token');
+  localStorage.removeItem('curelex_activePlan');
 }
 
 export function AppProvider({ children }) {
@@ -60,36 +68,40 @@ export function AppProvider({ children }) {
     localStorage.removeItem('curelex_activePlan');
     setActivePlanState(null);
   }, []);
-  // ────────────────────────────────────────────────────────────────────────────
 
-  // ── On app load: if we have a session but no plan in localStorage,
-  //    fetch clinic from backend to restore the plan (handles page refresh
-  //    after logout+login, or cases where localStorage was cleared)
+  // ── On app load: restore plan from backend if missing in localStorage ────────
   useEffect(() => {
-    const storedPlan = normalizePlan(localStorage.getItem('curelex_activePlan'));
+    const storedPlan     = normalizePlan(localStorage.getItem('curelex_activePlan'));
     const currentSession = getSession();
 
     if (currentSession && !storedPlan) {
-      // No plan in localStorage but user is logged in — fetch from backend
       apiGetMyClinic()
         .then((clinic) => {
-          // Backend likely returns clinic.plan or clinic.subscription.plan
+          if (!clinic) return; // 401 redirect already happened in api.js
           const backendPlan =
             clinic?.plan ??
             clinic?.subscription?.plan ??
             clinic?.activePlan ??
             null;
-
-          if (backendPlan) {
-            setActivePlan(backendPlan); // normalizes + saves to localStorage
-          }
+          if (backendPlan) setActivePlan(backendPlan);
         })
-        .catch(() => {
-          // Ignore — user may not be authenticated yet
+        .catch((err) => {
+          // ✅ Clear session if token is invalid/expired
+          const msg = err?.message || '';
+          if (
+            msg.includes('401') ||
+            msg.includes('Invalid') ||
+            msg.includes('expired') ||
+            msg.includes('Unauthorized')
+          ) {
+            clearAllAuth();
+            setSessionState(null);
+            setActivePlanState(null);
+          }
         });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, []);
 
   const setSession = useCallback((sess) => {
     setSessionState(sess);
@@ -104,23 +116,19 @@ export function AppProvider({ children }) {
   const login = useCallback((sess) => {
     setSession(sess);
 
-    // After login, always sync plan from backend
-    // (in case localStorage was wiped or plan changed server-side)
+    // Sync plan from backend after login
     apiGetMyClinic()
       .then((clinic) => {
+        if (!clinic) return;
         const backendPlan =
           clinic?.plan ??
           clinic?.subscription?.plan ??
           clinic?.activePlan ??
           null;
-
-        if (backendPlan) {
-          setActivePlan(backendPlan);
-        }
-        // If no plan on backend, leave as-is (user will be shown PlanSelection)
+        if (backendPlan) setActivePlan(backendPlan);
       })
       .catch(() => {
-        // Ignore fetch errors during login sync
+        // Ignore — api.js handles 401 redirect automatically
       });
   }, [setSession, setActivePlan]);
 
@@ -174,14 +182,14 @@ export function AppProvider({ children }) {
   // ── Plan Activation ───────────────────────────────────────────────────────────
   const activatePlan = useCallback(async (planKey) => {
     await apiActivatePlan(planKey);
-    setActivePlan(planKey); // normalizes + saves
+    setActivePlan(planKey);
   }, [setActivePlan]);
 
   return (
     <AppContext.Provider value={{
       session, login, logout,
       // ── Plan ──
-      activePlan,       // 'lite' | 'plus' | 'pro' | null
+      activePlan,
       setActivePlan,
       clearPlan,
       activatePlan,
