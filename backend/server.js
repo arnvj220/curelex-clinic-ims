@@ -53,7 +53,10 @@ const PORT = env.port || 5000;
 mongoose
   .connect(env.mongoUri)
   .then(() => {
-    console.log(`✅ MongoDB connected (shared): ${mongoose.connection.host}`);
+    console.log(`✅ MongoDB connected`);
+console.log(`HOST: ${mongoose.connection.host}`);
+console.log(`DB NAME: ${mongoose.connection.name}`);
+console.log(`URI: ${env.mongoUri}`);
     server.listen(PORT, () => {
       console.log(`🚀 Server on port ${PORT}`);
       console.log(`📦 IMS:    http://localhost:${PORT}/ims/api/v1`);

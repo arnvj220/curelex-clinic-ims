@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { apiRegister, apiLogin } from '../utils/api';
 import curelexLogo from '../assets/image.png';
 
-// ── Mobile detection hook ─────────────────────────────────────────────────────
+// // ── Mobile detection hook ─────────────────────────────────────────────────────
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 480);
   useEffect(() => {
@@ -442,8 +443,198 @@ function EmailField({ label, value, onChange, S, disabled, placeholder }) {
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Inline styles (CSS variables via JS) ─────────────────────────────────────
+const lightVars = {
+  '--brand': '#0a3d62',
+  '--brand2': '#1565a8',
+  '--teal': '#00b894',
+  '--teal2': '#00cec9',
+  '--bg': '#f0f7ff',
+  '--surface': '#ffffff',
+  '--surface2': '#f5faff',
+  '--text': '#0a2540',
+  '--muted': '#4a6278',
+  '--light': '#8fa8bc',
+  '--border': '#d0dce8',
+};
+
+const darkVars = {
+  '--brand': '#0a3d62',
+  '--brand2': '#1565a8',
+  '--teal': '#00b894',
+  '--teal2': '#00cec9',
+  '--bg': '#060e1a',
+  '--surface': '#0e1e2e',
+  '--surface2': '#162030',
+  '--text': '#e8f4fd',
+  '--muted': '#7fa8c8',
+  '--light': '#3d6080',
+  '--border': '#1e3450',
+};
+
+const globalCSS = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { overflow-x: hidden; transition: background .3s, color .3s; }
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+  .hero-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .12; animation: drift 10s ease-in-out infinite alternate; pointer-events: none; }
+  .blob1 { width: 600px; height: 600px; background: var(--brand2); top: -200px; right: -150px; }
+  .blob2 { width: 500px; height: 500px; background: var(--teal); bottom: -150px; left: -100px; animation-delay: -5s; }
+  .blob3 { width: 300px; height: 300px; background: #6c5ce7; top: 50%; left: 30%; animation-delay: -3s; }
+  @keyframes drift { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(30px,20px) scale(1.1); } }
+
+  @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(.8); } }
+  @keyframes floatup { 0% { transform: translateY(0); } 100% { transform: translateY(-12px); } }
+  @keyframes floatbadge { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+
+  .hero-card-main { animation: floatup 4s ease-in-out infinite alternate; }
+  .fb1 { animation: floatbadge 5s ease-in-out infinite alternate; }
+  .fb2 { animation: floatbadge 6s ease-in-out infinite alternate; animation-delay: -3s; }
+  .hero-badge-dot { animation: pulse 2s infinite; }
+
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity .6s, transform .6s; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  .service-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, var(--brand), var(--teal)); opacity: 0; transition: opacity .3s; border-radius: 16px; }
+  .service-card:hover::before { opacity: 1; }
+  .service-card:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(10,61,98,.15); border-color: transparent; }
+  .service-card:hover .sc-title { color: #fff; }
+  .service-card:hover .sc-desc { color: rgba(255,255,255,.8); }
+  .service-card:hover .sc-arrow { color: #fff; transform: translateX(4px); }
+  .service-card:hover .sc-icon { background: rgba(255,255,255,.2) !important; }
+
+  .benefit-item:hover { border-color: var(--teal); box-shadow: 0 8px 24px rgba(0,184,148,.1); transform: translateX(4px); }
+  .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(10,61,98,.1); border-color: rgba(0,184,148,.3); }
+  .why-card:hover { border-color: var(--brand2); box-shadow: 0 12px 36px rgba(10,61,98,.12); transform: translateY(-3px); }
+
+  .faq-a { padding: 0 20px; max-height: 0; overflow: hidden; transition: all .3s; font-size: 14px; color: var(--muted); line-height: 1.7; background: var(--surface2); }
+  .faq-a.open { max-height: 200px; padding: 14px 20px 16px; }
+  .faq-icon { color: var(--light); transition: transform .3s; font-size: 18px; }
+  .faq-icon.open { transform: rotate(45deg); }
+
+  .toast { position: fixed; bottom: 30px; right: 30px; padding: 14px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 9999; box-shadow: 0 8px 30px rgba(0,0,0,.3); transform: translateY(20px); opacity: 0; transition: all .35s; pointer-events: none; max-width: 320px; display: flex; align-items: center; gap: 10px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: #00b894; color: #fff; }
+  .toast.error { background: #e74c3c; color: #fff; }
+  .toast.default { background: #0a3d62; color: #fff; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(6,14,26,.6); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+  .form-input:focus { border-color: var(--brand2) !important; box-shadow: 0 0 0 3px rgba(21,101,168,.1); background: var(--surface); outline: none; }
+  .modal-input:focus { border-color: var(--brand2) !important; box-shadow: 0 0 0 3px rgba(21,101,168,.1); outline: none; }
+  .newsletter-input:focus { border-color: var(--teal); outline: none; }
+
+  .sc-arrow { transition: all .3s; display: block; }
+
+  @media (max-width: 900px) {
+    .hero-visual { display: none !important; }
+    .hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+    .about-grid { grid-template-columns: 1fr !important; }
+    .contact-grid { grid-template-columns: 1fr !important; }
+    .footer-top { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 600px) {
+    .nav-links-desktop, .btn-ghost-nav, .btn-solid-nav { display: none !important; }
+    .hamburger { display: flex !important; }
+    .form-grid { grid-template-columns: 1fr !important; }
+    .footer-top { grid-template-columns: 1fr !important; }
+    .hero-stats { gap: 20px !important; }
+    .hero-btns { flex-direction: column !important; align-items: flex-start !important; }
+  }
+`;
+
+// ── Google Font Loader ────────────────────────────────────────────────────────
+function GoogleFonts() {
+  return (
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap"
+        rel="stylesheet"
+      />
+    </>
+  );
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function Toast({ toast }) {
+  return (
+    <div className={`toast ${toast.visible ? 'show' : ''} ${toast.type || 'default'}`}>
+      {toast.message}
+    </div>
+  );
+}
+
+// ── Role Button ───────────────────────────────────────────────────────────────
+function RoleBtn({ label, selected, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: 10,
+        border: `1.5px solid ${selected ? 'var(--brand2)' : 'var(--border)'}`,
+        borderRadius: 9,
+        background: selected ? 'rgba(21,101,168,.07)' : 'var(--surface)',
+        fontSize: 12.5,
+        fontWeight: selected ? 600 : 500,
+        color: selected ? 'var(--brand)' : 'var(--muted)',
+        cursor: 'pointer',
+        fontFamily: "'DM Sans', sans-serif",
+        transition: 'all .2s',
+        textAlign: 'center',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ── FAQ Item ──────────────────────────────────────────────────────────────────
+function FaqItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{ padding: '16px 20px', fontWeight: 600, fontSize: 14.5, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text)', background: 'var(--surface)', transition: 'background .2s' }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--surface2)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'var(--surface)'}
+      >
+        <span>{q}</span>
+        <span className={`faq-icon ${open ? 'open' : ''}`}>+</span>
+      </div>
+      <div className={`faq-a ${open ? 'open' : ''}`}>{a}</div>
+    </div>
+  );
+}
+
+// ── Service Card ──────────────────────────────────────────────────────────────
+function ServiceCard({ icon, title, desc, iconBg, delay = 0 }) {
+  return (
+    <div className="service-card reveal" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, transition: 'all .3s', position: 'relative', overflow: 'hidden', cursor: 'default', transitionDelay: `${delay}s` }}>
+      <div className="sc-inner" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="sc-icon" style={{ width: 52, height: 52, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16, background: iconBg, transition: 'background .3s' }}>{icon}</div>
+        <div className="sc-title" style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8, transition: 'color .3s' }}>{title}</div>
+        <div className="sc-desc" style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.6, transition: 'color .3s' }}>{desc}</div>
+        <span className="sc-arrow" style={{ color: 'var(--light)', fontSize: 16, marginTop: 16 }}>→</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function LandingPage() {
+  const [darkMode, setDarkMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: '' });
+  const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [contactAlert, setContactAlert] = useState('');
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [nlEmail, setNlEmail] = useState('');
+  const toastTimer = useRef(null);
   const { login } = useApp();
   const mob = useIsMobile();
   const S   = makeStyles(mob);
@@ -453,7 +644,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(false);
   const [err,     setErr]     = useState('');
 
-  // Dynamic city options returned from the API
+//   // Dynamic city options returned from the API
   const [apiCities, setApiCities] = useState([]);
 
   const [form, setForm] = useState({
@@ -477,7 +668,6 @@ export default function LandingPage() {
     }));
   }
 
-  // ── Register ──────────────────────────────────────────────────────────────
   async function handleRegister() {
     setErr('');
 
@@ -533,71 +723,712 @@ export default function LandingPage() {
   }
 
   const roles = [
-    { key: 'superadmin',   label: '⭐  Super Admin'  },
-    { key: 'admin',        label: '🔐  Clinic Admin'  },
-    { key: 'receptionist', label: '📋  Receptionist'  },
-    { key: 'doctor',       label: '👨‍⚕️  Doctor'        },
-    { key: 'pharmacist',   label: '💊  Pharmacist'    },  
+        { key: 'superadmin',   label: '⭐  Super Admin'  },
+        { key: 'admin',        label: '🔐  Clinic Admin'  },
+        { key: 'receptionist', label: '📋  Receptionist'  },
+        { key: 'doctor',       label: '👨‍⚕️  Doctor'        },
+        { key: 'pharmacist',   label: '💊  Pharmacist'    },  
+      ];
+
+  // Apply CSS vars to root
+  const themeVars = darkMode ? darkVars : lightVars;
+
+  function showToast(message, type = '') {
+    setToast({ visible: true, message, type });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 3500);
+  }
+
+  function scrollToSection(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    setMobileMenuOpen(false);
+  }
+
+  async function submitContactForm() {
+    const {
+      name,
+      email,
+      phone,
+      message,
+    } = contactForm;
+  
+    if (
+      !name ||
+      !email ||
+      !phone ||
+      !message
+    ) {
+      return res.status(400).json({
+        message:
+          "All fields are required",
+      });
+    }
+  
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/clinic/contact",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            phone,
+            message,
+          }),
+        }
+      );
+  
+      const data =
+        await response.json();
+  
+      if (response.ok) {
+        setContactSuccess(true);
+  
+        setContactForm({
+          name: "",
+          email: "",
+          phone: "",
+          message: "",
+        });
+  
+        showToast(
+          "Message sent successfully! ✉️",
+          "success"
+        );
+      } else {
+        showToast(
+          data.message ||
+            "Failed to send message",
+          "error"
+        );
+      }
+    } catch (err) {
+      console.error(err);
+  
+      showToast(
+        "Server error. Please try again.",
+        "error"
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (mode) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+  
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [mode]);
+
+  // Scroll reveal
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  const cssVarString = Object.entries(themeVars).map(([k, v]) => `${k}:${v}`).join(';');
+
+  const services = [
+    { icon: '🔁', title: 'Smart Queue Management', desc: 'AI-powered queue assignment that minimizes patient wait times and optimizes doctor schedules in real time.', iconBg: 'rgba(0,184,148,.1)', delay: 0 },
+    { icon: '📅', title: 'Appointment Scheduling', desc: 'Online and offline appointment booking with automated reminders via SMS and WhatsApp.', iconBg: 'rgba(21,101,168,.1)', delay: 0.05 },
+    { icon: '📝', title: 'Digital Prescription System', desc: 'Paperless prescriptions with drug interaction alerts, dosage templates, and patient history access.', iconBg: 'rgba(108,92,231,.1)', delay: 0.1 },
+    { icon: '💊', title: 'Pharmacy Integration', desc: 'Seamless connectivity with your in-house or partner pharmacy for instant prescription fulfillment.', iconBg: 'rgba(253,203,110,.15)', delay: 0.15 },
+    { icon: '📊', title: 'Patient Analytics', desc: 'Deep insights into patient flow, peak hours, revenue trends, and clinical performance metrics.', iconBg: 'rgba(0,206,201,.1)', delay: 0.2 },
+    { icon: '👥', title: 'Staff Management', desc: 'Role-based access for doctors, receptionists, pharmacists, and admins with shift scheduling.', iconBg: 'rgba(231,76,60,.08)', delay: 0.25 },
+    { icon: '🔔', title: 'Real-time Notifications', desc: 'WhatsApp, SMS, and in-app notifications keep patients and staff updated on queue status.', iconBg: 'rgba(0,184,148,.1)', delay: 0.3 },
+    { icon: '🖥️', title: 'Role-based Dashboard', desc: 'Personalized dashboards for each role — designed for clarity, speed, and ease of use.', iconBg: 'rgba(21,101,168,.1)', delay: 0.35 },
+  ];
+
+  const testimonials = [
+    { initials: 'DK', name: 'Dr. Kiran Mehta', role: 'Cardiologist · Pune', text: 'Curelex completely transformed how we manage patients. Our wait times dropped by 35% in the first month, and both patients and staff are happier.', avatarBg: 'linear-gradient(135deg,var(--brand),var(--brand2))' },
+    { initials: 'RS', name: 'Rohit Soni', role: 'Clinic Owner · Mumbai', text: 'The pharmacy integration is seamless. Prescriptions go directly to our dispensary and patients collect without waiting. Outstanding product.', avatarBg: 'linear-gradient(135deg,var(--teal),var(--teal2))' },
+    { initials: 'PA', name: 'Pooja Agarwal', role: 'Head Receptionist · Delhi', text: 'As a receptionist, the role-based dashboard is incredibly intuitive. Managing 80+ patients a day used to be chaos — now it\'s smooth and organized.', avatarBg: 'linear-gradient(135deg,#6c5ce7,#a29bfe)' },
+  ];
+
+  const whyCards = [
+    { icon: '🔒', title: 'Secure Platform', desc: 'HIPAA-aligned data encryption and role-based access control protects every record.' },
+    { icon: '⚡', title: 'Lightning Fast', desc: 'Sub-second load times with 99.9% uptime SLA guaranteed.' },
+    { icon: '🎯', title: 'Easy to Use', desc: 'Zero learning curve — your staff is productive from day one.' },
+    { icon: '🤖', title: 'AI-powered Queue', desc: 'Smart algorithms auto-optimize patient flow and reduce no-shows.' },
+    { icon: '📡', title: 'Real-time Tracking', desc: 'Live queue status visible to patients via WhatsApp and app.' },
+    { icon: '🏆', title: 'Trusted & Verified', desc: 'Used by 500+ clinics. Backed by healthcare experts and data science.' },
+  ];
+
+  const faqs = [
+    { q: 'Is Curelex free to start?', a: 'Yes! You get a 14-day free trial with full access to all features. No credit card required.' },
+    { q: 'Can multiple doctors use one account?', a: 'Absolutely. Each clinic can have unlimited staff members with role-based access control — doctors, receptionists, pharmacists, and admins all get personalized views.' },
+    { q: 'Does it work on mobile?', a: 'Curelex is fully responsive and works on any device. We also have dedicated iOS and Android apps coming soon.' },
+    { q: 'How secure is patient data?', a: 'All data is encrypted at rest and in transit using AES-256. We follow HIPAA-aligned practices and never share data with third parties.' },
   ];
 
   return (
-    <div style={{ ...S.page, ...(mode === null ? { height: '100vh', overflowY: 'hidden' } : {}) }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; }
-        @keyframes drift {
-          0%   { transform: translate(0,0) scale(1); }
-          100% { transform: translate(20px,15px) scale(1.08); }
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        input::placeholder { color: #b8c8d8 !important; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        button, select, input { -webkit-tap-highlight-color: transparent; }
-      `}</style>
+    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: 'var(--bg)', color: 'var(--text)', ...Object.fromEntries(Object.entries(themeVars)) }}>
+      <style>{globalCSS}</style>
 
-      {/* Decorative orbs */}
-      {!mob && (
-        <>
-          <div style={{ position:'fixed', width:500, height:500, borderRadius:'50%', background:'#1565a8', filter:'blur(120px)', opacity:0.07, top:'-150px', right:'-150px', pointerEvents:'none', animation:'drift 8s ease-in-out 0s infinite alternate' }} />
-          <div style={{ position:'fixed', width:400, height:400, borderRadius:'50%', background:'#00b894', filter:'blur(120px)', opacity:0.08, bottom:'-100px', left:'-100px', pointerEvents:'none', animation:'drift 11s ease-in-out 3s infinite alternate' }} />
-        </>
-      )}
-      <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(10,61,98,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(10,61,98,0.04) 1px,transparent 1px)', backgroundSize:'50px 50px', pointerEvents:'none' }} />
+      {/* ── NAVBAR ── */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, padding: '0 clamp(16px,5vw,60px)', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: darkMode ? 'rgba(6,14,26,.85)' : 'rgba(240,247,255,.85)', backdropFilter: 'blur(18px)', borderBottom: '1px solid var(--border)', transition: 'all .3s' }}>
+        <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+        <div
+  style={{
+    width: mob ? 110 : 150,
+    height: mob ? 110 : 150,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexShrink: 0,
+  }}
+>
+  <img
+    src={curelexLogo}
+    alt="Curelex Logo"
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      display: 'block',
+    }}
+  />
+</div>
+        </a>
 
-      <div style={S.wrap}>
-        {/* Brand header */}
-        <div style={S.brand}>
-          <div style={S.logoBox}>
-            <div style={S.logoIcon}>
-              <img src={curelexLogo} alt="Curelex Logo" style={{ width:'100%', height:'100%', objectFit:'contain', display:'block' }} />
-            </div>
-          </div>
-          <div style={{ ...S.brandSub, marginBottom: mob ? 6 : 10 }}>Intelligent Patient Flow for Modern Clinics</div>
+        <div className="nav-links-desktop" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {['home', 'about', 'services', 'contact'].map(s => (
+            <button key={s} onClick={() => scrollToSection(s)} style={{ textDecoration: 'none', color: 'var(--muted)', fontSize: 14, fontWeight: 500, padding: '6px 14px', borderRadius: 8, transition: 'all .2s', border: 'none', background: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif', textTransform: 'capitalize'" }}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
         </div>
 
-        {/* ══════════ HOME ══════════ */}
-        {!mode && (
-          <div style={S.card}>
-            <div style={S.cardAccentBar} />
-            <div style={{ textAlign: 'center', marginBottom: mob ? 14 : 18 }}>
-              <span style={S.welcomeBadge}><span style={S.badgeDot} /> Trusted by 500+ Clinics</span>
-              <div style={S.welcomeTitle}>Welcome to Curelex</div>
-              <div style={S.welcomeDesc}>Streamline patient queues, reduce wait times, and deliver a seamless clinic experience.</div>
-            </div>
-            <button style={{ ...S.btnBase, ...S.btnPrimary }} onClick={() => { setMode('register'); setErr(''); }}>
-              Register Your Clinic <IcoArrowRight />
-            </button>
-            <div style={S.dividerOr}><div style={S.dividerLine} /> or <div style={S.dividerLine} /></div>
-            <button style={{ ...S.btnBase, ...S.btnOutline }} onClick={() => { setMode('login'); setErr(''); }}>
-              Sign in to Dashboard <IcoArrowRight color="#0a3d62" />
-            </button>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={() => setDarkMode(!darkMode)} title="Toggle dark mode" style={{ background: 'none', border: '1.5px solid var(--border)', color: 'var(--muted)', padding: '7px 10px', borderRadius: 9, cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>
+            {darkMode ? '☀️' : '🌙'}
+          </button>
+          <button className="btn-ghost-nav" 
+          onClick={() => {
+            setMode('login');
+            setErr('');
+          }}
+          style={{ background: 'none', border: '1.5px solid var(--border)', color: 'var(--text)', padding: '7px 18px', borderRadius: 9, fontSize: 13.5, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Sign In</button>
+          <button className="btn-solid-nav" 
+          onClick={() => {
+            setMode('register');
+            setErr('');
+          }}
+          style={{ background: 'linear-gradient(135deg,var(--brand),var(--brand2))', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 9, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 4px 14px rgba(10,61,98,.25)' }}>Sign Up</button>
+          <button className="hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu" style={{ display: 'none', flexDirection: 'column', gap: 4, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
+            <span style={{ width: 22, height: 2, background: 'var(--text)', borderRadius: 2, display: 'block' }} />
+            <span style={{ width: 22, height: 2, background: 'var(--text)', borderRadius: 2, display: 'block' }} />
+            <span style={{ width: 22, height: 2, background: 'var(--text)', borderRadius: 2, display: 'block' }} />
+          </button>
+        </div>
+      </nav>
 
-        {/* ══════════ REGISTER ══════════ */}
-        {mode === 'register' && (
-          <div style={S.card}>
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div style={{ display: 'flex', position: 'fixed', top: 68, left: 0, right: 0, background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '16px 24px 20px', zIndex: 999, flexDirection: 'column', gap: 4, boxShadow: '0 20px 40px rgba(0,0,0,.1)' }}>
+          {['home', 'about', 'services', 'contact'].map(s => (
+            <button key={s} onClick={() => scrollToSection(s)} style={{ color: 'var(--muted)', fontSize: 14, fontWeight: 500, padding: '10px 14px', borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'left' }}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+          <button onClick={() => { setMode('login'); setMobileMenuOpen(false); }} style={{ marginTop: 8, background: 'none', border: '1.5px solid var(--border)', color: 'var(--text)', padding: '10px 18px', borderRadius: 9, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Sign In</button>
+          <button onClick={() => { setMode('register'); setMobileMenuOpen(false); }} style={{ marginTop: 6, background: 'linear-gradient(135deg,var(--brand),var(--brand2))', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Sign Up</button>
+        </div>
+      )}
+
+      {/* ── HERO ── */}
+      <section id="home" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '100px clamp(16px,6vw,80px) 60px', position: 'relative', overflow: 'hidden' }}>
+        <div className="hero-blob blob1" />
+        <div className="hero-blob blob2" />
+        <div className="hero-blob blob3" />
+        <div className="hero-grid sec-inner" style={{ width: '100%', maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+          <div className="reveal">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(0,184,148,.1)', border: '1px solid rgba(0,184,148,.3)', borderRadius: 20, padding: '6px 16px', fontSize: 13, color: 'var(--teal)', fontWeight: 600, marginBottom: 20 }}>
+              <span className="hero-badge-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--teal)' }} />
+              Trusted by 500+ Clinics Across India
+            </div>
+            <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(34px,5vw,56px)', fontWeight: 800, lineHeight: 1.1, color: 'var(--text)', marginBottom: 18, letterSpacing: -1.5 }}>
+              Smart Patient Flow<br />for{' '}
+              <span style={{ background: 'linear-gradient(135deg,var(--brand2),var(--teal))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Modern Clinics</span>
+            </h1>
+            <p style={{ fontSize: 'clamp(15px,2vw,17px)', color: 'var(--muted)', lineHeight: 1.7, marginBottom: 32, fontWeight: 300 }}>
+              Streamline patient queues, reduce wait times, and deliver a seamless clinic experience — all from one powerful platform.
+            </p>
+            <div className="hero-btns" style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 40 }}>
+              <button onClick={() => setMode('register')} style={{ background: 'linear-gradient(135deg,var(--brand),var(--brand2))', color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", boxShadow: '0 6px 20px rgba(10,61,98,.3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                Get Started Free →
+              </button>
+              <button onClick={() => scrollToSection('services')} style={{ background: 'none', border: '2px solid var(--border)', color: 'var(--text)', padding: '13px 26px', borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
+                ▶ Book a Demo
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
+              {['24/7 Support', 'Smart Queue System', 'Patient Management', 'Live Analytics'].map(pill => (
+                <div key={pill} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(10,61,98,.06)', border: '1px solid rgba(10,61,98,.1)', borderRadius: 20, padding: '6px 14px', fontSize: 12.5, fontWeight: 500, color: 'var(--brand)' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
+                  {pill}
+                </div>
+              ))}
+            </div>
+            <div className="hero-stats" style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+              {[['500+', 'Clinics Active'], ['2M+', 'Patients Served'], ['40%', 'Wait Time Reduced']].map(([num, label]) => (
+                <div key={label}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{num}</div>
+                  <div style={{ fontSize: 12, color: 'var(--light)', fontWeight: 500, marginTop: 2 }}>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="hero-visual reveal" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', transitionDelay: '.2s' }}>
+            {/* Floating badge top */}
+            <div className="floating-badge fb1" style={{ position: 'absolute', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', boxShadow: '0 10px 40px rgba(10,61,98,.12)', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500, color: 'var(--text)', top: -20, right: -30 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(0,184,148,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>✅</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>Queue Optimized</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>8 patients ahead</div>
+              </div>
+            </div>
+
+            {/* Main card */}
+            <div className="hero-card-main" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 24, boxShadow: '0 30px 80px rgba(10,61,98,.15)', width: '100%', maxWidth: 360, position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'linear-gradient(135deg,var(--brand),var(--teal))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 14 }}>🏥</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>City Medical Centre</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>Live Queue · Today</div>
+                </div>
+                <div style={{ background: 'rgba(0,184,148,.1)', color: 'var(--teal)', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>● Live</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { num: '01', numBg: 'linear-gradient(135deg,var(--brand2),var(--teal))', name: 'Rahul Sharma', wait: 'Consulting now', badge: 'In Progress', badgeBg: 'rgba(0,184,148,.12)', badgeColor: 'var(--teal)', opacity: 1 },
+                  { num: '02', numBg: 'linear-gradient(135deg,#e17055,#d63031)', name: 'Priya Patel', wait: '~5 min wait', badge: 'Waiting', badgeBg: 'rgba(253,203,110,.15)', badgeColor: '#e17055', opacity: 1 },
+                  { num: '03', numBg: 'linear-gradient(135deg,#6c5ce7,#a29bfe)', name: 'Ankit Verma', wait: '~12 min wait', badge: 'Waiting', badgeBg: 'rgba(253,203,110,.15)', badgeColor: '#e17055', opacity: 1 },
+                  { num: '✓', numBg: '#d0dce8', numColor: 'var(--muted)', name: 'Sneha Joshi', wait: 'Completed · 10:32 AM', badge: 'Done', badgeBg: 'rgba(108,92,231,.1)', badgeColor: '#6c5ce7', opacity: 0.6 },
+                ].map(({ num, numBg, numColor, name, wait, badge, badgeBg, badgeColor, opacity }, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'var(--surface2)', borderRadius: 10, border: '1px solid var(--border)', opacity }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: numBg, color: numColor || '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{num}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--muted)' }}>{wait}</div>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: badgeBg, color: badgeColor }}>{badge}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Floating badge bottom */}
+            <div className="floating-badge fb2" style={{ position: 'absolute', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', boxShadow: '0 10px 40px rgba(10,61,98,.12)', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500, color: 'var(--text)', bottom: -10, left: -30 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(21,101,168,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📊</div>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)' }}>Today's Stats</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>32 patients · 98% on-time</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT ── */}
+      <section id="about" style={{ padding: '90px clamp(16px,6vw,80px)', background: 'var(--surface2)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="about-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center' }}>
+            <div className="reveal">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />About Curelex
+              </div>
+              <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 12 }}>Built for the Future of Healthcare</h2>
+              <p style={{ fontSize: 16, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.7, fontWeight: 300 }}>Curelex is an intelligent clinic management platform that empowers doctors, receptionists, and administrators to deliver world-class patient experiences — effortlessly.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 24 }}>
+                {[
+                  { icon: '⚡', bg: 'rgba(0,184,148,.1)', title: 'Reduce Waiting Time by 40%', desc: 'Smart queue algorithms ensure patients spend less time waiting and more time healing.' },
+                  { icon: '📋', bg: 'rgba(21,101,168,.1)', title: 'Manage Patient Queue Digitally', desc: 'Real-time queue management across all departments from a single dashboard.' },
+                  { icon: '📈', bg: 'rgba(108,92,231,.1)', title: 'Improve Clinic Efficiency', desc: 'Analytics and reports give you insights to continuously optimize operations.' },
+                  { icon: '😊', bg: 'rgba(253,203,110,.12)', title: 'Better Patient Experience', desc: 'WhatsApp notifications, digital tokens, and self-check-in keep patients informed.' },
+                ].map(({ icon, bg, title, desc }) => (
+                  <div key={title} className="benefit-item" style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 18, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, transition: 'all .25s' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, background: bg }}>{icon}</div>
+                    <div>
+                      <h4 style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{title}</h4>
+                      <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="reveal" style={{ transitionDelay: '.2s' }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 18, padding: 24, boxShadow: '0 20px 60px rgba(10,61,98,.1)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,var(--brand),var(--teal))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📊</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>Platform Overview</div>
+                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>This month's metrics</div>
+                  </div>
+                </div>
+                {[{ label: 'Patient Satisfaction', value: '98.2%', width: '98%', color: 'linear-gradient(90deg,var(--teal),var(--teal2))' }, { label: 'Queue Efficiency', value: '91%', width: '91%', color: 'linear-gradient(90deg,var(--brand),var(--brand2))' }].map(({ label, value, width, color }) => (
+                  <div key={label} style={{ background: 'var(--surface2)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <span style={{ fontSize: 13, color: 'var(--muted)' }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: label === 'Patient Satisfaction' ? 'var(--teal)' : 'var(--brand2)' }}>{value}</span>
+                    </div>
+                    <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ width, height: '100%', background: color, borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 20 }}>
+                  {[['500+', 'Clinics Onboarded'], ['2M+', 'Patients Managed'], ['40%', 'Less Wait Time'], ['99.9%', 'Uptime SLA']].map(([n, l]) => (
+                    <div key={l} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 12, padding: 18, textAlign: 'center' }}>
+                      <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800, color: 'var(--brand)', lineHeight: 1 }}>{n}</div>
+                      <div style={{ fontSize: 12, color: 'var(--light)', marginTop: 4 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SERVICES ── */}
+      <section id="services" style={{ padding: '90px clamp(16px,6vw,80px)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+              <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />What We Offer
+            </div>
+            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 12 }}>Everything Your Clinic Needs</h2>
+            <p style={{ fontSize: 16, color: 'var(--muted)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>A complete suite of tools designed to modernize every aspect of your clinic operations.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 20 }}>
+            {services.map(s => <ServiceCard key={s.title} {...s} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ── */}
+      <section id="testimonials" style={{ padding: '90px clamp(16px,6vw,80px)', background: 'var(--surface2)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+              <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />Testimonials
+            </div>
+            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 12 }}>Loved by Clinics Across India</h2>
+            <p style={{ fontSize: 16, color: 'var(--muted)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>Real feedback from doctors, clinic owners, and healthcare professionals using Curelex daily.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 20 }}>
+            {testimonials.map(({ initials, name, role, text, avatarBg }, i) => (
+              <div key={name} className="testimonial-card reveal" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, transition: 'all .25s', transitionDelay: `${i * 0.1}s` }}>
+                <div style={{ color: '#f39c12', fontSize: 13, marginBottom: 6, letterSpacing: 2 }}>★★★★★</div>
+                <div style={{ fontSize: 32, color: 'var(--teal)', lineHeight: 1, marginBottom: 12, fontFamily: 'Georgia, serif' }}>"</div>
+                <div style={{ fontSize: 14.5, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>{text}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{initials}</div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text)' }}>{name}</div>
+                    <div style={{ fontSize: 12, color: 'var(--light)' }}>{role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHY CHOOSE US ── */}
+      <section id="why" style={{ padding: '90px clamp(16px,6vw,80px)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+              <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />Why Curelex
+            </div>
+            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 12 }}>Why 500+ Clinics Choose Us</h2>
+            <p style={{ fontSize: 16, color: 'var(--muted)', maxWidth: 560, margin: '0 auto', lineHeight: 1.7, fontWeight: 300 }}>Built with security, speed, and simplicity at the core — so you can focus on patient care.</p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 16 }}>
+            {whyCards.map(({ icon, title, desc }, i) => (
+              <div key={title} className="why-card reveal" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 22, textAlign: 'center', transition: 'all .25s', transitionDelay: `${i * 0.05}s` }}>
+                <div style={{ fontSize: 30, marginBottom: 12 }}>{icon}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>{title}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--light)', lineHeight: 1.5 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTACT ── */}
+      <section id="contact" style={{ padding: '90px clamp(16px,6vw,80px)', background: 'var(--surface2)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 60, alignItems: 'start' }}>
+            <div className="reveal">
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />Get In Touch
+              </div>
+              <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 12 }}>Ask Us Anything</h2>
+              <p style={{ fontSize: 16, color: 'var(--muted)', lineHeight: 1.7, fontWeight: 300 }}>Have a question about Curelex? Our team is ready to help you get started.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 32 }}>
+                {[
+                  { icon: '📧', label: 'Email', value: 'hello@curelex.in' },
+                  { icon: '📞', label: 'Phone', value: '+91 98765 43210' },
+                  { icon: '📍', label: 'Address', value: 'Lucknow Tech Park, Gomti Nagar, Lucknow, UP 226010' },
+                ].map(({ icon, label, value }) => (
+                  <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(10,61,98,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{icon}</div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--light)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{label}</div>
+                      <div style={{ fontSize: 14.5, color: 'var(--text)', fontWeight: 500 }}>{value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 60 }}>
+                <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 16 }}>FAQ</h3>
+                {faqs.map(({ q, a }) => <FaqItem key={q} q={q} a={a} />)}
+              </div>
+            </div>
+
+            <div className="reveal" style={{ transitionDelay: '.15s' }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, padding: 32, boxShadow: '0 20px 60px rgba(10,61,98,.08)' }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 20 }}>Send a Message</div>
+
+                {contactSuccess && (
+                  <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(0,184,148,.1)', border: '1px solid rgba(0,184,148,.3)', color: 'var(--teal)', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    ✅ Message sent! We'll reply within 24 hours.
+                  </div>
+                )}
+                {contactAlert === 'error' && (
+                  <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(231,76,60,.08)', border: '1px solid rgba(231,76,60,.25)', color: '#c0392b', fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                    ⚠️ Please fill all required fields.
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {[
+  {
+    id: 'name',
+    label: 'Full Name *',
+    placeholder: 'Your full name',
+    type: 'text',
+    full: false,
+  },
+  {
+    id: 'email',
+    label: 'Email *',
+    placeholder: 'you@email.com',
+    type: 'email',
+    full: false,
+  },
+  {
+    id: 'phone',
+    label: 'Phone Number *',
+    placeholder: 'Enter phone number',
+    type: 'tel',
+    full: true,
+  },
+].map(({ id, label, placeholder, type, full }) => (
+                    <div key={id} style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: full ? '1 / -1' : 'auto' }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.5px' }}>{label}</label>
+                      <input
+                        className="form-input"
+                        type={type}
+                        value={contactForm[id]}
+                        onChange={e =>
+                          setContactForm(p => ({
+                            ...p,
+                            [id]:
+                              id === 'phone'
+                                ? e.target.value
+                                    .replace(/\D/g, '')
+                                    .slice(0, 10)
+                                : e.target.value
+                          }))
+                        }
+                        placeholder={placeholder}
+                        style={{ padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: 'var(--text)', background: 'var(--surface2)', outline: 'none', transition: 'all .2s', boxSizing: 'border-box', width: '100%' }}
+                      />
+                    </div>
+                  ))}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.5px' }}>Message *</label>
+                    <textarea
+                      className="form-input"
+                      value={contactForm.message}
+                      onChange={e => setContactForm(p => ({ ...p, message: e.target.value.slice(0, 500) }))}
+                      rows={5}
+                      placeholder="Describe your query in detail..."
+                      style={{ padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 10, fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: 'var(--text)', background: 'var(--surface2)', outline: 'none', transition: 'all .2s', resize: 'none', width: '100%', boxSizing: 'border-box' }}
+                    />
+                    <div style={{ fontSize: 11, color: 'var(--light)', textAlign: 'right' }}>{contactForm.message.length}/500 characters</div>
+                  </div>
+                </div>
+                <button onClick={submitContactForm} style={{ width: '100%', padding: 14, background: 'linear-gradient(135deg,var(--brand),var(--brand2))', color: '#fff', border: 'none', borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8 }}>
+                  Send Message →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer style={{ background: 'var(--brand)', color: 'rgba(255,255,255,.85)', padding: '50px clamp(16px,6vw,80px) 30px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div
+  className="footer-top"
+  style={{
+    display: 'grid',
+    gridTemplateColumns: mob
+      ? '1fr'
+      : '2fr 1fr 1fr',
+    gap: mob ? 30 : 50,
+    paddingBottom: 40,
+    borderBottom:
+      '1px solid rgba(255,255,255,.12)',
+  }}
+>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div
+  style={{
+    width: 225,
+    height:45,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexShrink: 0,
+  }}
+>
+  <img
+    src={curelexLogo}
+    alt="Curelex"
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain',
+      transform: mob
+  ? 'scale(2.4)'
+  : 'scale(3)'
+    }}
+  />
+</div>
+              </div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.7, opacity: .7, margin: '12px 0 20px' }}>Intelligent patient flow management for modern clinics. Reducing wait times and improving healthcare outcomes since 2026.</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {['𝕏', 'in', 'f', '▶'].map(icon => (
+                  <button key={icon} style={{ width: 34, height: 34, borderRadius: 8, background: 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, cursor: 'pointer', border: 'none', color: '#fff' }}>{icon}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Quick Links</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[['Home', 'home'], ['About Us', 'about'], ['Services', 'services'], ['Testimonials', 'testimonials'], ['Contact', 'contact']].map(([label, id]) => (
+                  <button key={id} onClick={() => scrollToSection(id)} style={{ color: 'rgba(255,255,255,.65)', fontSize: 13.5, textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'left', padding: 0, transition: 'color .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.65)'}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Platform</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[['Sign Up Free', () => setSignupOpen(true)], ['Sign In', () => setSigninOpen(true)], ['Book a Demo', null], ['API Docs', null], ['Changelog', null]].map(([label, handler]) => (
+                  <button key={label} onClick={handler || undefined} style={{ color: 'rgba(255,255,255,.65)', fontSize: 13.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'left', padding: 0, transition: 'color .2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.65)'}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+
+          </div>
+
+          <div style={{ paddingTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ fontSize: 13, opacity: .6 }}>© 2026 Curelex. All rights reserved. Made with ❤️ in India.</div>
+            <div style={{ display: 'flex', gap: 20 }}>
+              {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map(l => (
+                <a key={l} style={{ fontSize: 12.5, opacity: .6, cursor: 'pointer', textDecoration: 'none', color: 'rgba(255,255,255,.6)' }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '.6'; e.currentTarget.style.color = 'rgba(255,255,255,.6)'; }}
+                >{l}</a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
+
+{/* Register and login */}
+{mode && (
+   <div
+   style={{
+     position: 'fixed',
+     inset: 0,
+     background: 'rgba(0,0,0,0.6)',
+     backdropFilter: 'blur(10px)',
+     display: 'flex',
+     justifyContent: 'center',
+     alignItems:
+       mode === 'login'
+         ? 'center'
+         : 'flex-start',
+     zIndex: 99999,
+     overflowY: 'auto',
+     overflowX: 'hidden',
+     paddingTop:
+       mode === 'register'
+         ? (mob ? '80px' : '40px')
+         : '20px',
+     paddingBottom: '30px',
+     paddingLeft: mob ? '14px' : '24px',
+     paddingRight: mob ? '14px' : '24px',
+   }}
+   onClick={() => setMode(null)}
+ >
+   <div
+     onClick={(e) => e.stopPropagation()}
+     style={{
+       width: '100%',
+       maxWidth: mode === 'login'
+         ? 430
+         : 500,
+       margin: '0 auto',
+       animation:
+         'fadeInScale .25s ease',
+     }}
+   >
+
+      
+    {mode === 'register' && (
+            <div
+            style={{
+              ...S.card,
+              borderRadius: 24,
+              boxShadow:
+                darkMode
+                  ? '0 25px 70px rgba(0,0,0,.45)'
+                  : '0 25px 70px rgba(0,0,0,.18)',
+              border:
+                '1px solid var(--border)',
+            }}
+          >
             <div style={S.cardAccentBar} />
             <div style={S.secHeader}>
               <button style={S.btnGhost} onClick={goBack} disabled={loading}><IcoArrowLeft /> Back</button>
@@ -728,10 +1559,19 @@ export default function LandingPage() {
             </div>
           </div>
         )}
-
-        {/* ══════════ LOGIN ══════════ */}
-        {mode === 'login' && (
-          <div style={S.card}>
+  {mode === 'login' && (
+            <div
+            style={{
+              ...S.card,
+              borderRadius: 24,
+              boxShadow:
+                darkMode
+                  ? '0 25px 70px rgba(0,0,0,.45)'
+                  : '0 25px 70px rgba(0,0,0,.18)',
+              border:
+                '1px solid var(--border)',
+            }}
+          >
             <div style={S.cardAccentBar} />
             <div style={S.secHeader}>
               <button style={S.btnGhost} onClick={goBack} disabled={loading}><IcoArrowLeft /> Back</button>
@@ -773,7 +1613,13 @@ export default function LandingPage() {
             </div>
           </div>
         )}
-      </div>
+
+    </div>
+  </div>
+)}
+
+      {/* ── TOAST ── */}
+      <Toast toast={toast} />
     </div>
   );
 }
