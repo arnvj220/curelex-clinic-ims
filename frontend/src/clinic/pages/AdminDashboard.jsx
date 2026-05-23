@@ -2563,7 +2563,67 @@ function DoctorManagement({ doctors, patients, onAdd, onDelete, onUpdateTokenLim
       {show && (
         <Modal title="Add New Doctor" onClose={() => { setShow(false); setErr(''); }}>
           <div style={{ display: 'grid', gap: 14 }}>
-            {/* ... existing add doctor form ... */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Input 
+                label="Doctor Name *" 
+                value={form.name} 
+                onChange={(e) => f('name', e.target.value)} 
+                placeholder="Dr. Ahmed Ali" 
+              />
+              <Select 
+                label="Specialist *" 
+                value={form.specialist} 
+                onChange={(e) => f('specialist', e.target.value)}
+              >
+                <option value="">-- Select --</option>
+                {SPECIALISTS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </Select>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Input 
+                label="Login Email *" 
+                type="email" 
+                value={form.email} 
+                onChange={(e) => f('email', e.target.value)} 
+                placeholder="doctor@clinic.com" 
+              />
+              <Input 
+                label="Password *" 
+                type="password" 
+                value={form.password} 
+                onChange={(e) => f('password', e.target.value)} 
+                placeholder="••••••" 
+              />
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Input 
+                label="Phone" 
+                value={form.phone} 
+                onChange={(e) => f('phone', e.target.value)} 
+                placeholder="03xx-xxxxxxx" 
+              />
+              <Input 
+                label="Consultation Fee (Rs.)" 
+                type="number" 
+                value={form.fee} 
+                onChange={(e) => f('fee', e.target.value)} 
+                placeholder="500" 
+              />
+            </div>
+            
+            <WeeklySchedulePicker 
+              value={form.schedule} 
+              onChange={(s) => f('schedule', s)} 
+            />
+            
+            {err && <Alert type="error">{err}</Alert>}
+            
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <Btn variant="ghost" onClick={() => { setShow(false); setErr(''); }}>Cancel</Btn>
+              <Btn onClick={addDoctor} disabled={busy}>{busy ? 'Adding…' : 'Add Doctor'}</Btn>
+            </div>
           </div>
         </Modal>
       )}
