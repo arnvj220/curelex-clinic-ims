@@ -39,24 +39,34 @@ function getCurrentTimeIST() {
 }
 
 // ── Base fetch ────────────────────────────────────────────────────────────────
+// ── Update the request function in api.js ──
 async function request(path, options = {}) {
   const token = getToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res  = await fetch(`${BASE}${path}`, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
+  try {
+    const res = await fetch(`${BASE}${path}`, { ...options, headers });
+    const data = await res.json().catch(() => ({}));
 
-  if (!res.ok) {
-    // ✅ Auto-clear session and redirect on 401
-    if (res.status === 401) {
-      clearAllAuth();
-      window.location.href = '/';
-      return;
+    if (!res.ok) {
+      // Only auto-clear on 401 if we're not already on login page
+      if (res.status === 401 && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        console.error('401 Unauthorized - clearing session');
+        clearAllAuth();
+        // Only redirect if not already redirected
+        if (!window.location.pathname === '/') {
+          window.location.href = '/';
+        }
+        throw new Error('Session expired. Please login again.');
+      }
+      throw new Error(data.message || `Request failed (${res.status})`);
     }
-    throw new Error(data.message || `Request failed (${res.status})`);
+    return data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
   }
-  return data;
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -183,11 +193,15 @@ export async function apiGetPatients(params = {}) {
 }
 
 export async function apiAddPatient(patientData) {
+  // Ensure doctorName is properly set
+  const doctorName = patientData.doctorName || 
+                     (patientData.doctorId && typeof patientData.doctorId === 'object' ? patientData.doctorId.name : '');
+  
   const payload = {
     name:          patientData.name,
     symptoms:      patientData.symptoms,
-    doctorId:      patientData.doctorId,
-    doctorName:    patientData.doctorName || patientData.doctorId,
+    doctorId:      typeof patientData.doctorId === 'object' ? patientData.doctorId._id : patientData.doctorId,
+    doctorName:    doctorName,
     date:          patientData.date || getTodayIST(),
     time:          patientData.time || getCurrentTimeIST(),
     age:           patientData.age          || '',
@@ -202,6 +216,9 @@ export async function apiAddPatient(patientData) {
     isReturnVisit: patientData.isReturnVisit || false,
   };
 
+  // Log for debugging
+  console.log('Sending patient data:', payload);
+  
   return request('/patients', {
     method: 'POST',
     body: JSON.stringify(payload),

@@ -597,23 +597,21 @@ function DoctorSelector({ doctors, patients, form, f }) {
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
           {doctors.map((doc) => {
-            const todayStr2    = getTodayIST();
-            const todayCount   = patients.filter((p) => String(p.doctorId) === String(doc._id) && p.date === todayStr2).length;
-            const isSelected   = form.doctorId === String(doc._id);
-            const limit        = doc.dailyTokenLimit ?? 0;
+            const todayStr2 = getTodayIST();
+            const todayCount = patients.filter((p) => String(p.doctorId) === String(doc._id) && p.date === todayStr2).length;
+            const isSelected = form.doctorId === String(doc._id);
+            const limit = doc.dailyTokenLimit ?? 0;
             const limitReached = limit > 0 && todayCount >= limit;
             return (
               <div key={doc._id} onClick={() => {
-  if (!limitReached) {
-    f('doctorId', String(doc._id));
-    f('doctorName', doc.name);
-
-    if (doc.fee) {
-      f('totalFee', String(doc.fee));
-    }
-  }
-  
-}}
+                if (!limitReached) {
+                  f('doctorId', String(doc._id));
+                  f('doctorName', doc.name);  // This is important!
+                  if (doc.fee) {
+                    f('totalFee', String(doc.fee));
+                  }
+                }
+              }}
                 style={{ border: `2px solid ${isSelected ? 'var(--primary)' : limitReached ? '#e74c3c' : 'var(--border)'}`, borderRadius: 10, padding: '12px 14px', cursor: limitReached ? 'not-allowed' : 'pointer', background: isSelected ? 'var(--primary-light)' : limitReached ? 'rgba(231,76,60,0.04)' : 'var(--surface)', opacity: limitReached ? 0.7 : 1, transition: '.15s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <div>
@@ -684,24 +682,63 @@ function PatientRegister({ doctors, patients, onRegistered }) {
 }
 
 function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack }) {
-  const init = { name: '', age: '', phone: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), gender: 'male', symptoms: '', doctorId: '', doctorName: '', totalFee: '', paid: '', notes: '', paymentMethod: 'cash' };
+  const init = { 
+    name: '', age: '', 
+    phone: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), 
+    whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), 
+    gender: 'male', symptoms: '', 
+    doctorId: '', doctorName: '', 
+    totalFee: '', paid: '', notes: '', 
+    paymentMethod: 'cash' 
+  };
   const [form, setForm] = useState(init);
-  const [err,  setErr]  = useState('');
+  const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const f    = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  
+  const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   const dues = Math.max(0, (parseFloat(form.totalFee) || 0) - (parseFloat(form.paid) || 0));
+  
   async function register() {
-    if (!form.name.trim())                            { setErr('Patient name is required.'); return; }
-    if (!form.doctorId)                               { setErr('Please select a doctor.'); return; }
-    if (form.doctorName == form.doctorId)                               { setErr('Please select a doctor.'); return; }
-    if (!form.symptoms.trim())                        { setErr('Please describe the symptoms.'); return; }
-    if (form.phone    && form.phone.length    !== 10) { setErr('Phone number must be exactly 10 digits.'); return; }
+    if (!form.name.trim()) { setErr('Patient name is required.'); return; }
+    if (!form.doctorId) { setErr('Please select a doctor.'); return; }
+    if (!form.symptoms.trim()) { setErr('Please describe the symptoms.'); return; }
+    if (form.phone && form.phone.length !== 10) { setErr('Phone number must be exactly 10 digits.'); return; }
     if (form.whatsapp && form.whatsapp.length !== 10) { setErr('WhatsApp number must be exactly 10 digits.'); return; }
-    setBusy(true); setErr('');
     
-    try { await onRegistered({ name: form.name.trim(), age: form.age, phone: form.phone, whatsapp: form.whatsapp, gender: form.gender, symptoms: form.symptoms.trim(), notes: form.notes, doctorId: form.doctorId, doctorName:form.doctorName, totalFee: parseFloat(form.totalFee) || 0, paid: parseFloat(form.paid) || 0, paymentMethod: form.paymentMethod }); setForm(init); }
-    catch (e) { setErr(e.message); }
-    finally { setBusy(false); }
+    setBusy(true); 
+    setErr('');
+    
+    try {
+      // Find the selected doctor to get the name
+      const selectedDoctor = doctors.find(doc => String(doc._id) === String(form.doctorId));
+      const doctorName = selectedDoctor?.name || '';
+      
+      if (!doctorName) {
+        setErr('Doctor not found. Please select a valid doctor.');
+        return;
+      }
+      
+      await onRegistered({ 
+        name: form.name.trim(), 
+        age: form.age, 
+        phone: form.phone, 
+        whatsapp: form.whatsapp, 
+        gender: form.gender, 
+        symptoms: form.symptoms.trim(), 
+        notes: form.notes, 
+        doctorId: form.doctorId, 
+        doctorName: doctorName,  // Make sure this is passed
+        totalFee: parseFloat(form.totalFee) || 0, 
+        paid: parseFloat(form.paid) || 0, 
+        paymentMethod: form.paymentMethod 
+      }); 
+      setForm(init); 
+    } catch (e) {
+      console.error('Registration error:', e);
+      setErr(e.message || 'Registration failed. Please try again.'); 
+    } finally { 
+      setBusy(false); 
+    }
   }
   return (
     <div>

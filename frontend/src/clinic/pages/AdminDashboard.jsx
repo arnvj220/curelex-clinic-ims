@@ -1870,7 +1870,7 @@ export default function AdminDashboard({ onChoosePlan }) {
           headerExtra={planBadge}
         >
           {tab === 'overview'      && <Overview clinic={clinic} doctors={doctors} todayPatients={todayPatients} paidTotal={paidTotal} duesTotal={duesTotal} />}
-          {tab === 'doctors'       && <DoctorManagement doctors={doctors} patients={patients} onAdd={handleAddUser} onDelete={handleDeleteUser} onUpdateTokenLimit={handleUpdateTokenLimit} />}
+          {tab === 'doctors'       && <DoctorManagement doctors={doctors} patients={patients} onAdd={handleAddUser} onDelete={handleDeleteUser} onUpdateTokenLimit={handleUpdateTokenLimit} activePlan={activePlan} />}
           {tab === 'receptionists' && <ReceptionistManagement receptionists={receptionists} onAdd={handleAddUser} onDelete={handleDeleteUser} />}
           {tab === 'patients'      && <AllPatients patients={patients} />}
           {tab === 'followups'     && <AdminFollowUps patients={patients} doctors={doctors} onUpdateFollowUp={handleUpdateFollowUp} />}
