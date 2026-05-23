@@ -81,14 +81,13 @@ router.post('/login', async (req, res) => {
       const token = sign({ id: user._id, role, clinicId: user.clinicId });
       const responseData = { token, role, clinicId: user.clinicId, user };
 
-      // ── Pharmacist: generate SSO token so IMS opens without re-login ──
       if (role === 'pharmacist') {
         const ssoRaw = crypto.randomBytes(32).toString('hex');
         await SsoToken.create({
           token:     ssoRaw,
           email:     email.toLowerCase(),
           clinicId:  String(user.clinicId),
-          expiresAt: new Date(Date.now() + 5 * 60 * 1000), // ← FIXED: was missing, caused 500
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
         });
         responseData.ssoToken = ssoRaw;
       }
@@ -97,6 +96,29 @@ router.post('/login', async (req, res) => {
     }
 
     res.status(400).json({ message: 'Unknown role.' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ✅ NEW — POST /api/clinic/auth/refresh-sso
+// Generates a fresh SSO token for already-logged-in pharmacist
+router.post('/refresh-sso', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'pharmacist') {
+      return res.status(403).json({ message: 'Only pharmacists can refresh SSO' });
+    }
+
+    const ssoRaw = crypto.randomBytes(32).toString('hex');
+    await SsoToken.create({
+      token:     ssoRaw,
+      email:     user.email,
+      clinicId:  String(user.clinicId),
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+    });
+
+    res.json({ ssoToken: ssoRaw });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

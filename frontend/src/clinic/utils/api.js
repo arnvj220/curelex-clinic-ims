@@ -340,12 +340,14 @@ export function setSession(s)   { localStorage.setItem('clinic_session', JSON.st
 export function removeSession() { localStorage.removeItem('clinic_session'); }
 
 // ── Clear all auth data ───────────────────────────────────────────────────────
+// ── Clear all auth data ───────────────────────────────────────────────────────
 function clearAllAuth() {
   removeToken();
   removeSession();
   localStorage.removeItem('ims_token');
   localStorage.removeItem('ims_sso_token');
   localStorage.removeItem('curelex_activePlan');
+  sessionStorage.removeItem('sso_attempt'); // ✅ ADDED
 }
 
 // ── IST date/time helpers ─────────────────────────────────────────────────────
@@ -441,6 +443,7 @@ export async function apiLogin(role, email, password) {
 
   // ── Store SSO token for pharmacist IMS redirect ──
   if (data.role === 'pharmacist' && data.ssoToken) {
+    sessionStorage.removeItem('sso_attempt');
     localStorage.setItem('ims_sso_token', data.ssoToken);
     console.log('SSO token stored in localStorage:', data.ssoToken); // ← DEBUG
   } else if (data.role === 'pharmacist') {

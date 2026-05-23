@@ -1,4 +1,3 @@
-// src/context/AppContext.jsx
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import {
   apiLogout,
@@ -28,7 +27,6 @@ import {
 
 const AppContext = createContext(null);
 
-// ── Helper: normalize plan string into 'lite'|'plus'|'pro'|null ──────────────
 function normalizePlan(raw) {
   if (!raw) return null;
   const s = String(raw).toLowerCase().trim();
@@ -39,18 +37,18 @@ function normalizePlan(raw) {
   return null;
 }
 
-// ── Helper: clear all auth from localStorage ──────────────────────────────────
 function clearAllAuth() {
   removeToken();
   removeSession();
   localStorage.removeItem('ims_token');
+  localStorage.removeItem('ims_sso_token');
   localStorage.removeItem('curelex_activePlan');
+  sessionStorage.removeItem('sso_attempt'); // ✅ ADDED
 }
 
 export function AppProvider({ children }) {
   const [session, setSessionState] = useState(() => getSession());
 
-  // ── Plan state ───────────────────────────────────────────────────────────────
   const [activePlan, setActivePlanState] = useState(
     () => normalizePlan(localStorage.getItem('curelex_activePlan'))
   );
@@ -70,7 +68,6 @@ export function AppProvider({ children }) {
     setActivePlanState(null);
   }, []);
 
-  // ── On app load: restore plan from backend if missing in localStorage ────────
   useEffect(() => {
     const storedPlan     = normalizePlan(localStorage.getItem('curelex_activePlan'));
     const currentSession = getSession();
@@ -78,7 +75,7 @@ export function AppProvider({ children }) {
     if (currentSession && !storedPlan) {
       apiGetMyClinic()
         .then((clinic) => {
-          if (!clinic) return; // 401 redirect already happened in api.js
+          if (!clinic) return;
           const backendPlan =
             clinic?.plan ??
             clinic?.subscription?.plan ??
@@ -87,7 +84,6 @@ export function AppProvider({ children }) {
           if (backendPlan) setActivePlan(backendPlan);
         })
         .catch((err) => {
-          // ✅ Clear session if token is invalid/expired
           const msg = err?.message || '';
           if (
             msg.includes('401') ||
@@ -116,8 +112,6 @@ export function AppProvider({ children }) {
 
   const login = useCallback((sess) => {
     setSession(sess);
-
-    // Sync plan from backend after login
     apiGetMyClinic()
       .then((clinic) => {
         if (!clinic) return;
@@ -128,30 +122,28 @@ export function AppProvider({ children }) {
           null;
         if (backendPlan) setActivePlan(backendPlan);
       })
-      .catch(() => {
-        // Ignore — api.js handles 401 redirect automatically
-      });
+      .catch(() => {});
   }, [setSession, setActivePlan]);
 
-  const logout = useCallback(() => setSession(null), [setSession]);
+  const logout = useCallback(() => {
+    clearAllAuth(); // ✅ now also clears sso_attempt
+    setSessionState(null);
+    setActivePlanState(null);
+  }, []);
 
-  // ── Clinic ───────────────────────────────────────────────────────────────────
   const refreshClinic = useCallback(() => apiGetMyClinic(), []);
   const saveClinic    = useCallback((updates) => apiUpdateMyClinic(updates), []);
 
-  // ── Users ────────────────────────────────────────────────────────────────────
   const getUsers   = useCallback(() => apiGetUsers(), []);
   const addUser    = useCallback((data) => apiAddUser(data), []);
   const updateUser = useCallback((userId, data) => apiUpdateUser(userId, data), []);
   const deleteUser = useCallback((userId) => apiDeleteUser(userId), []);
   const getMe      = useCallback(() => apiGetMe(), []);
 
-  // ── Token Limit ──────────────────────────────────────────────────────────────
   const updateTokenLimit = useCallback(
     (doctorId, limit) => apiUpdateTokenLimit(doctorId, limit), []
   );
 
-  // ── Patients ─────────────────────────────────────────────────────────────────
   const getPatients         = useCallback((params = {}) => apiGetPatients(params), []);
   const addPatient          = useCallback((data) => apiAddPatient(data), []);
   const updatePatientStatus = useCallback(
@@ -162,7 +154,6 @@ export function AppProvider({ children }) {
       apiUpdateFollowUp(patientId, followUpDate, followUpNote), []
   );
 
-  // ── Patient Files ─────────────────────────────────────────────────────────────
   const uploadPatientFile = useCallback(
     (patientId, file) => apiUploadPatientFile(patientId, file), []
   );
@@ -176,12 +167,10 @@ export function AppProvider({ children }) {
     (patientId, fileId) => apiDeletePatientFile(patientId, fileId), []
   );
 
-  // ── Patient History ───────────────────────────────────────────────────────────
   const getPatientHistory = useCallback(
     (phone) => apiGetPatientHistory(phone), []
   );
 
-  // ── Plan Activation ───────────────────────────────────────────────────────────
   const activatePlan = useCallback(async (planKey) => {
     await apiActivatePlan(planKey);
     setActivePlan(planKey);
@@ -190,22 +179,12 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       session, login, logout,
-      // ── Plan ──
-      activePlan,
-      setActivePlan,
-      clearPlan,
-      activatePlan,
-      // ── Clinic ──
+      activePlan, setActivePlan, clearPlan, activatePlan,
       refreshClinic, saveClinic,
-      // ── Users ──
       getUsers, addUser, updateUser, deleteUser, getMe,
-      // ── Token ──
       updateTokenLimit,
-      // ── Patients ──
       getPatients, addPatient, updatePatientStatus, updateFollowUp,
-      // ── Files ──
       uploadPatientFile, getPatientFiles, downloadPatientFile, deletePatientFile,
-      // ── History ──
       getPatientHistory,
     }}>
       {children}

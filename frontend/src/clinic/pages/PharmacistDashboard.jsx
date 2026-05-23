@@ -1,46 +1,61 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
 
-const IMS_BASE =
-  import.meta.env.VITE_IMS_API_URL || "http://localhost:5000/ims/api/v1";
+const IMS_BASE = import.meta.env.VITE_IMS_API_URL || "http://localhost:5000/ims/api/v1";
+const CLINIC_BASE = import.meta.env.VITE_CLINIC_API_URL || "http://localhost:5000/api/clinic";
 
 export default function PharmacistDashboard() {
   const { logout } = useApp();
   const [status, setStatus] = useState("connecting");
-  const didRun = useRef(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    if (didRun.current) return;
-    didRun.current = true;
-    autoConnect();
+    // ✅ Clear stale sso_attempt on fresh mount so it always tries
+    sessionStorage.removeItem("sso_attempt");
+    connect();
   }, []);
 
-  async function autoConnect() {
+  async function getFreshSsoToken() {
+    const clinicToken = localStorage.getItem("clinic_token");
+    if (!clinicToken) throw new Error("No clinic token");
+
+    const res = await fetch(`${CLINIC_BASE}/auth/refresh-sso`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${clinicToken}`,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to get SSO token");
+    return data.ssoToken;
+  }
+
+  async function connect() {
+    // ✅ Already have IMS token — go directly
     if (localStorage.getItem("ims_token")) {
       window.location.replace("/ims");
       return;
     }
 
-    const ssoToken = localStorage.getItem("ims_sso_token"); // ← FIXED
-    if (!ssoToken) {
-      setStatus("error");
-      return;
-    }
-
     try {
+      // ✅ Always get a FRESH SSO token — never reuse old one
+      const ssoToken = await getFreshSsoToken();
+
       const res = await fetch(`${IMS_BASE}/auth/sso-exchange`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token: ssoToken }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "SSO failed");
 
-      localStorage.removeItem("ims_sso_token"); // ← FIXED
       localStorage.setItem("ims_token", data.token);
       window.location.replace("/ims");
     } catch (err) {
-      console.error("SSO exchange failed:", err.message);
+      console.error("SSO connect failed:", err.message);
+      setErrorMsg(err.message || "SSO failed");
       setStatus("error");
     }
   }
@@ -68,14 +83,20 @@ export default function PharmacistDashboard() {
       <div style={wrap}>
         <div style={card}>
           <div style={{ fontSize: 52 }}>⚠️</div>
-          <h2 style={{ color: "#0a3d62", margin: "12px 0 8px" }}>
-            Session Expired
-          </h2>
-          <p style={{ color: "#6b8299", marginBottom: 24 }}>
+          <h2 style={{ color: "#0a3d62", margin: "12px 0 8px" }}>Session Expired</h2>
+          <p style={{ color: "#6b8299", marginBottom: 8 }}>
             Please log in again to open the Inventory System.
           </p>
+          {errorMsg && (
+            <p style={{ color: "#dc2626", fontSize: 12, marginBottom: 16, wordBreak: "break-all" }}>
+              Error: {errorMsg}
+            </p>
+          )}
           <button
-            onClick={logout}
+            onClick={() => {
+              sessionStorage.removeItem("sso_attempt");
+              logout();
+            }}
             style={{
               padding: "12px 24px",
               borderRadius: 10,
@@ -101,9 +122,7 @@ export default function PharmacistDashboard() {
         <div style={{ fontWeight: 800, fontSize: 20, color: "#0a3d62", marginBottom: 8 }}>
           Opening Inventory System…
         </div>
-        <div style={{ color: "#8fa8bc", fontSize: 13, marginBottom: 24 }}>
-          Please wait
-        </div>
+        <div style={{ color: "#8fa8bc", fontSize: 13, marginBottom: 24 }}>Please wait</div>
         <div style={{
           width: 36, height: 36, margin: "0 auto",
           border: "4px solid #e4eaf1",
