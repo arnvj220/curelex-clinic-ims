@@ -1182,9 +1182,9 @@ export default function LandingPage() {
               <p style={{ fontSize: 16, color: 'var(--muted)', lineHeight: 1.7, fontWeight: 300 }}>Have a question about Curelex? Our team is ready to help you get started.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 32 }}>
                 {[
-                  { icon: '📧', label: 'Email', value: 'hello@curelex.in' },
-                  { icon: '📞', label: 'Phone', value: '+91 98765 43210' },
-                  { icon: '📍', label: 'Address', value: 'Lucknow Tech Park, Gomti Nagar, Lucknow, UP 226010' },
+                  { icon: '📧', label: 'Email', value: 'supprt@curelex.in' },
+                  { icon: '📞', label: 'Phone', value: '+91 89578 09085' },
+                  { icon: '📍', label: 'Address', value: 'IIIT Allahabad' },
                 ].map(({ icon, label, value }) => (
                   <div key={label} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(10,61,98,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{icon}</div>
