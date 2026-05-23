@@ -7,7 +7,8 @@ const router = express.Router();
 // ── GET /api/clinics/me ──────────────────────────────────────────
 router.get('/me', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'admin')
+    // ── FIXED: pharmacists can read their assigned clinic ──
+    if (!['admin', 'pharmacist'].includes(req.user.role))
       return res.status(403).json({ message: 'Admin only.' });
 
     const clinic = await Clinic.findById(req.user.clinicId).select('-password');
@@ -50,7 +51,6 @@ router.post('/activate-plan', auth, async (req, res) => {
 
     const { plan } = req.body;
 
-    // ✅ Fixed: now accepts lite, plus, and pro
     if (!['lite', 'plus', 'pro'].includes(plan))
       return res.status(400).json({ message: 'Invalid plan.' });
 

@@ -39,7 +39,6 @@ function getCurrentTimeIST() {
 }
 
 // ── Base fetch ────────────────────────────────────────────────────────────────
-// ── Update the request function in api.js ──
 async function request(path, options = {}) {
   const token = getToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -50,15 +49,18 @@ async function request(path, options = {}) {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      // Only auto-clear on 401 if we're not already on login page
-      if (res.status === 401 && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-        console.error('401 Unauthorized - clearing session');
-        clearAllAuth();
-        // Only redirect if not already redirected
-        if (!window.location.pathname === '/') {
+      if (res.status === 401) {
+        // ── FIXED: check the API path, not the browser URL ──
+        const isAuthRoute = path.includes('/auth/login') || path.includes('/auth/register');
+        if (!isAuthRoute) {
+          // Expired session — clear everything and redirect to home
+          console.error('401 Unauthorized - clearing session');
+          clearAllAuth();
           window.location.href = '/';
+          throw new Error('Session expired. Please login again.');
         }
-        throw new Error('Session expired. Please login again.');
+        // For login/register 401 — just throw the server message (wrong password etc.)
+        throw new Error(data.message || 'Invalid credentials');
       }
       throw new Error(data.message || `Request failed (${res.status})`);
     }
@@ -86,7 +88,7 @@ export async function apiRegister(form) {
       state:    form.state     || '',
     }),
   });
-  if (!data) return; // 401 redirect already happened
+  if (!data) return;
   setToken(data.token);
   setSession({ type: data.role, clinicId: String(data.clinicId), user: data.clinic || null, token: data.token });
   return data;
@@ -98,21 +100,21 @@ export async function apiLogin(role, email, password) {
     body: JSON.stringify({ role, email, password }),
   });
 
-  if (!data) return; // 401 redirect already happened
+  if (!data) return;
 
   setToken(data.token);
   const clinicId = data.clinicId ? String(data.clinicId) : null;
 
   setSession({
-    type:    data.role,
+    type:     data.role,
     clinicId,
-    user:    data.clinic || data.user || null,
-    token:   data.token,
+    user:     data.clinic || data.user || null,
+    token:    data.token,
     email,
-    name:    data.clinic?.name || data.user?.name || data.user?.fullName || email,
+    name:     data.clinic?.name || data.user?.name || data.user?.fullName || email,
   });
 
-  // Store short-lived SSO token for pharmacist IMS redirect
+  // ── Store SSO token for pharmacist IMS redirect ──
   if (data.role === 'pharmacist' && data.ssoToken) {
     sessionStorage.setItem('ims_sso_token', data.ssoToken);
   }
@@ -147,7 +149,6 @@ export async function apiGetPatientHistory(phone) {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
-
   if (!res.ok) throw new Error(data.message || 'Failed to fetch history');
   return data.visits || [];
 }
@@ -175,7 +176,6 @@ export async function apiAddUser(userData) {
   });
 }
 
-// ── Update User ──────────────────────────────────────────────────
 export async function apiUpdateUser(userId, userData) {
   return request(`/users/${userId}`, {
     method: 'PATCH',
@@ -201,32 +201,30 @@ export async function apiGetPatients(params = {}) {
 }
 
 export async function apiAddPatient(patientData) {
-  // Ensure doctorName is properly set
-  const doctorName = patientData.doctorName || 
-                     (patientData.doctorId && typeof patientData.doctorId === 'object' ? patientData.doctorId.name : '');
-  
+  const doctorName = patientData.doctorName ||
+    (patientData.doctorId && typeof patientData.doctorId === 'object'
+      ? patientData.doctorId.name : '');
+
   const payload = {
     name:          patientData.name,
     symptoms:      patientData.symptoms,
     doctorId:      typeof patientData.doctorId === 'object' ? patientData.doctorId._id : patientData.doctorId,
-    doctorName:    doctorName,
-    date:          patientData.date || getTodayIST(),
-    time:          patientData.time || getCurrentTimeIST(),
-    age:           patientData.age          || '',
-    phone:         patientData.phone        || '',
-    whatsapp:      patientData.whatsapp     || '',
-    gender:        patientData.gender       || 'male',
-    notes:         patientData.notes        || '',
-    totalFee:      patientData.totalFee     ?? 0,
-    paid:          patientData.paid         ?? 0,
-    dues:          patientData.dues         ?? Math.max(0, (patientData.totalFee || 0) - (patientData.paid || 0)),
+    doctorName,
+    date:          patientData.date          || getTodayIST(),
+    time:          patientData.time          || getCurrentTimeIST(),
+    age:           patientData.age           || '',
+    phone:         patientData.phone         || '',
+    whatsapp:      patientData.whatsapp      || '',
+    gender:        patientData.gender        || 'male',
+    notes:         patientData.notes         || '',
+    totalFee:      patientData.totalFee      ?? 0,
+    paid:          patientData.paid          ?? 0,
+    dues:          patientData.dues          ?? Math.max(0, (patientData.totalFee || 0) - (patientData.paid || 0)),
     paymentMethod: patientData.paymentMethod || 'cash',
     isReturnVisit: patientData.isReturnVisit || false,
   };
 
-  // Log for debugging
   console.log('Sending patient data:', payload);
-  
   return request('/patients', {
     method: 'POST',
     body: JSON.stringify(payload),

@@ -1,45 +1,50 @@
 import Supplier from "../models/Supplier.js";
 import Purchase from "../models/Purchase.js";
-import {asyncHandler} from "../utils/asyncHandler.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 // GET /suppliers
 const listSuppliers = asyncHandler(async (req, res) => {
-  const suppliers = await Supplier.find({}).sort({ createdAt: -1 });
+  const clinicId = req.user.clinicId; // ← ADDED
+  const suppliers = await Supplier.find({ clinicId }).sort({ createdAt: -1 }); // ← ADDED
   res.json({ data: suppliers });
 });
 
 // POST /suppliers
 const createSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.create(req.body);
+  const clinicId = req.user.clinicId; // ← ADDED
+  if (!clinicId) { res.status(400); throw new Error("No clinic associated with your account"); }
+  const supplier = await Supplier.create({ ...req.body, clinicId }); // ← ADDED
   res.status(201).json(supplier);
 });
 
 // PUT /suppliers/:id
 const updateSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true
-  });
-  if (!supplier) {
-    res.status(404);
-    throw new Error("Supplier not found");
-  }
+  const clinicId = req.user.clinicId; // ← ADDED
+  const supplier = await Supplier.findOneAndUpdate(
+    { _id: req.params.id, clinicId }, // ← ADDED
+    req.body,
+    { new: true, runValidators: true }
+  );
+  if (!supplier) { res.status(404); throw new Error("Supplier not found"); }
   res.json(supplier);
 });
 
 // DELETE /suppliers/:id
 const deleteSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.findByIdAndDelete(req.params.id);
-  if (!supplier) {
-    res.status(404);
-    throw new Error("Supplier not found");
-  }
+  const clinicId = req.user.clinicId; // ← ADDED
+  const supplier = await Supplier.findOneAndDelete({ _id: req.params.id, clinicId }); // ← ADDED
+  if (!supplier) { res.status(404); throw new Error("Supplier not found"); }
   res.json({ message: "Supplier deleted" });
 });
 
 // GET /suppliers/:id/history
 const supplierHistory = asyncHandler(async (req, res) => {
-  const purchases = await Purchase.find({ supplier: req.params.id })
+  const clinicId = req.user.clinicId; // ← ADDED
+  // Verify supplier belongs to clinic first
+  const supplier = await Supplier.findOne({ _id: req.params.id, clinicId }); // ← ADDED
+  if (!supplier) { res.status(404); throw new Error("Supplier not found"); }
+
+  const purchases = await Purchase.find({ supplier: req.params.id, clinicId }) // ← ADDED
     .populate("items.product", "name sku")
     .sort({ createdAt: -1 });
   res.json({ data: purchases });
@@ -48,30 +53,15 @@ const supplierHistory = asyncHandler(async (req, res) => {
 // POST /suppliers/:id/record-payment
 const recordPayment = asyncHandler(async (req, res) => {
   const { amount, note } = req.body;
-  const supplier = await Supplier.findById(req.params.id);
-  if (!supplier) {
-    res.status(404);
-    throw new Error("Supplier not found");
-  }
+  const clinicId = req.user.clinicId; // ← ADDED
+  const supplier = await Supplier.findOne({ _id: req.params.id, clinicId }); // ← ADDED
+  if (!supplier) { res.status(404); throw new Error("Supplier not found"); }
 
-  // Reduce outstanding balance
   supplier.outstandingAmount = Math.max(0, Number(supplier.outstandingAmount || 0) - Number(amount));
   if (!supplier.paymentHistory) supplier.paymentHistory = [];
-  supplier.paymentHistory.push({
-    amount: Number(amount),
-    note: note || "",
-    date: new Date()
-  });
+  supplier.paymentHistory.push({ amount: Number(amount), note: note || "", date: new Date() });
   await supplier.save();
-
   res.json({ message: "Payment recorded", supplier });
 });
 
-export {
-  listSuppliers,
-  createSupplier,
-  updateSupplier,
-  deleteSupplier,
-  supplierHistory,
-  recordPayment
-};
+export { listSuppliers, createSupplier, updateSupplier, deleteSupplier, supplierHistory, recordPayment };

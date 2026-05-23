@@ -4,21 +4,17 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
     proxy: {
-      '/ims/api': {                    // ← FIXED: only proxy API calls
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
+      // Only proxy API calls — NOT the /ims frontend route
       '/api/clinic': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
-      '/socket.io': {
+      '/ims/api': {
+        // Only proxy /ims/api/* to backend, not /ims itself
         target: 'http://localhost:5000',
-        ws: true,
         changeOrigin: true,
-      }
+      },
     }
   }
 })

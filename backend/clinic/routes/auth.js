@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import Clinic from '../models/Clinic.js';
 import User from '../models/User.js';
-import SsoToken from '../../models/SsoToken.js';
+import SsoToken from '../../ims/src/models/SsoToken.js';
 import env from '../config/env.js';
 
 const router = express.Router();
@@ -13,7 +13,6 @@ function sign(payload) {
   return jwt.sign(payload, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 }
 
-// Middleware: verify clinic JWT
 function protect(req, res, next) {
   const token = (req.headers.authorization || '').split(' ')[1];
   if (!token) return res.status(401).json({ message: 'No token' });
@@ -82,15 +81,16 @@ router.post('/login', async (req, res) => {
       const token = sign({ id: user._id, role, clinicId: user.clinicId });
       const responseData = { token, role, clinicId: user.clinicId, user };
 
-      // ── Pharmacist: generate SSO token so IMS opens without password ──
+      // ── Pharmacist: generate SSO token so IMS opens without re-login ──
       if (role === 'pharmacist') {
-        const ssoToken = crypto.randomBytes(32).toString('hex');
+        const ssoRaw = crypto.randomBytes(32).toString('hex');
         await SsoToken.create({
-          token: ssoToken,
-          email: email.toLowerCase(),
-          clinicId: user.clinicId,
+          token:     ssoRaw,
+          email:     email.toLowerCase(),
+          clinicId:  String(user.clinicId),
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000), // ← FIXED: was missing, caused 500
         });
-        responseData.ssoToken = ssoToken; // send to frontend
+        responseData.ssoToken = ssoRaw;
       }
 
       return res.json(responseData);

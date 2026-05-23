@@ -2,7 +2,6 @@ import Inventory from "../models/Inventory.js";
 import Product from "../models/Product.js";
 import StockMovement from "../models/StockMovement.js";
 
-// In-memory low-stock event listeners (can be extended to email/SMS later)
 const lowStockListeners = [];
 
 const onLowStock = (callback) => {
@@ -19,6 +18,7 @@ const ensureInventoryDoc = async (productId) => {
 
 const changeStock = async ({
   productId,
+  clinicId,           // ← added
   quantityChange,
   movementType,
   reason,
@@ -41,6 +41,7 @@ const changeStock = async ({
 
   await StockMovement.create({
     product: productId,
+    clinicId,           // ← added
     movementType,
     quantityChange,
     reason,
@@ -49,7 +50,6 @@ const changeStock = async ({
     performedBy: userId
   });
 
-  // FIXED: fire low-stock notifications after every stock change
   const threshold = Number(product.lowStockThreshold || 5);
   if (nextQty <= threshold) {
     const event = {
@@ -60,11 +60,9 @@ const changeStock = async ({
       threshold,
       outOfStock: nextQty === 0
     };
-    // Console warning (always)
     console.warn(
       `[LOW STOCK] ${product.name} (SKU: ${product.sku}) — qty: ${nextQty}${nextQty === 0 ? " OUT OF STOCK" : ""}`
     );
-    // Fire any registered listeners
     lowStockListeners.forEach((fn) => {
       try {
         fn(event);

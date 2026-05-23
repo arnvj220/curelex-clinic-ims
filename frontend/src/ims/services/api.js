@@ -1,8 +1,7 @@
 import axios from "axios";
 
-// Updated to use merged backend endpoint
 const api = axios.create({
-  baseURL: import.meta.env.VITE_IMS_API_URL || "http://localhost:5000/api/ims/api/v1"
+  baseURL: import.meta.env.VITE_IMS_API_URL || "http://localhost:5000/ims/api/v1",
 });
 
 api.interceptors.request.use((config) => {

@@ -6,9 +6,10 @@ import { buildInvoiceNumber } from "../utils/invoiceNumber.js";
 import { calculateLine, calculateTotals } from "../utils/gst.js";
 import { changeStock } from "./inventoryService.js";
 
-const nextInvoiceNumber = async () => {
+// ── FIXED: per-clinic invoice counter ────────────────────────────
+const nextInvoiceNumber = async (clinicId) => {
   const year = new Date().getFullYear();
-  const key  = `invoice:${year}`;
+  const key  = `invoice:${year}:${clinicId}`; // ← unique per clinic per year
   const counter = await Counter.findOneAndUpdate(
     { key },
     { $inc: { seq: 1 } },
@@ -17,18 +18,28 @@ const nextInvoiceNumber = async () => {
   return buildInvoiceNumber(year, counter.seq);
 };
 
-const createSale = async ({ customerId, walkInName, items, discountAmount, paymentMethod, userId }) => {
+const createSale = async ({
+  clinicId,       // ← ADDED
+  customerId,
+  walkInName,
+  items,
+  discountAmount,
+  paymentMethod,
+  userId,
+}) => {
   if (!items || !items.length) throw new Error("At least one sale item is required");
+  if (!clinicId) throw new Error("No clinic associated with this session");
 
   const saleItems = [];
   for (const item of items) {
-    const product = await Product.findById(item.productId);
+    // ← ADDED clinicId filter so clinic A can't sell clinic B's products
+    const product = await Product.findOne({ _id: item.productId, clinicId });
     if (!product) throw new Error("Product not found");
 
     const lineCalc = calculateLine({
       quantity:  item.quantity,
       unitPrice: product.price,
-      gstRate:   product.gstRate
+      gstRate:   product.gstRate,
     });
 
     saleItems.push({
@@ -38,7 +49,7 @@ const createSale = async ({ customerId, walkInName, items, discountAmount, payme
       quantity:  Number(item.quantity),
       unitPrice: product.price,
       gstRate:   product.gstRate,
-      ...lineCalc
+      ...lineCalc,
     });
   }
 
@@ -46,7 +57,8 @@ const createSale = async ({ customerId, walkInName, items, discountAmount, payme
 
   let customer = null;
   if (customerId) {
-    customer = await Customer.findById(customerId);
+    // ← ADDED clinicId filter so clinic A can't bill clinic B's customers
+    customer = await Customer.findOne({ _id: customerId, clinicId });
     if (!customer) throw new Error("Customer not found");
   }
 
@@ -57,9 +69,9 @@ const createSale = async ({ customerId, walkInName, items, discountAmount, payme
   }
 
   const sale = await Sale.create({
-    invoiceNo:      await nextInvoiceNumber(),
+    clinicId,                                             // ← ADDED
+    invoiceNo:      await nextInvoiceNumber(clinicId),    // ← FIXED: per-clinic
     customer:       customer ? customer._id : undefined,
-    // Save free-text name only when no saved customer is selected
     walkInName:     (!customer && walkInName) ? walkInName.trim() : "",
     items:          saleItems,
     subtotal:       totals.subtotal,
@@ -68,7 +80,7 @@ const createSale = async ({ customerId, walkInName, items, discountAmount, payme
     finalAmount:    totals.finalAmount,
     paymentMethod,
     status:         "draft",
-    createdBy:      userId
+    createdBy:      userId,
   });
 
   return sale;
@@ -81,13 +93,14 @@ const finalizeSale = async ({ saleId, userId }) => {
 
   for (const item of sale.items) {
     await changeStock({
+      clinicId:       sale.clinicId,        // ← ADDED
       productId:      item.product,
       quantityChange: -Number(item.quantity),
       movementType:   "sale",
       reason:         `Sale ${sale.invoiceNo}`,
       referenceModel: "Sale",
       referenceId:    sale._id,
-      userId
+      userId,
     });
   }
 
