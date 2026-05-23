@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import jwt from "jsonwebtoken";
 import Sale from "../models/Sale.js";
+import Clinic from "../../../clinic/models/Clinic.js";// ← ADDED: import Clinic model
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { createSale, finalizeSale } from "../services/saleService.js";
 import { logAudit } from "../services/auditService.js";
@@ -8,9 +9,9 @@ import env from "../config/env.js";
 
 const listSales = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, status } = req.query;
-  const clinicId = req.user.clinicId; // ← ADDED
+  const clinicId = req.user.clinicId;
 
-  const filter = { clinicId }; // ← ADDED
+  const filter = { clinicId };
   if (status) filter.status = status;
 
   const skip = (Number(page) - 1) * Number(limit);
@@ -22,11 +23,11 @@ const listSales = asyncHandler(async (req, res) => {
 });
 
 const createSaleTransaction = asyncHandler(async (req, res) => {
-  const clinicId = req.user.clinicId; // ← ADDED
+  const clinicId = req.user.clinicId;
   if (!clinicId) { res.status(400); throw new Error("No clinic associated with your account"); }
 
   const sale = await createSale({
-    clinicId, // ← ADDED — pass to saleService
+    clinicId,
     customerId: req.body.customerId,
     walkInName: req.body.walkInName || "",
     items: req.body.items,
@@ -45,8 +46,8 @@ const finalizeSaleTransaction = asyncHandler(async (req, res) => {
 });
 
 const cancelDraftSale = asyncHandler(async (req, res) => {
-  const clinicId = req.user.clinicId; // ← ADDED
-  const sale = await Sale.findOne({ _id: req.params.id, clinicId }); // ← ADDED
+  const clinicId = req.user.clinicId;
+  const sale = await Sale.findOne({ _id: req.params.id, clinicId });
   if (!sale) { res.status(404); throw new Error("Sale not found"); }
   if (sale.status !== "draft") { res.status(400); throw new Error("Only draft sales can be cancelled"); }
   sale.status = "cancelled";
@@ -55,7 +56,7 @@ const cancelDraftSale = asyncHandler(async (req, res) => {
   res.json(sale);
 });
 
-// ── Number to words (unchanged) ───────────────────────────────────
+// ── Number to words ───────────────────────────────────────────────
 function numberToWords(amount) {
   const ones = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
   const tens = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
@@ -83,7 +84,7 @@ function numberToWords(amount) {
 
 const resolveCustomerName = (sale) => sale.customer?.name || sale.walkInName || "Walk-in Customer";
 
-// ── PDF Invoice (unchanged — invoice is per-sale so no clinic filter needed) ──
+// ── PDF Invoice ───────────────────────────────────────────────────
 const downloadInvoicePdf = asyncHandler(async (req, res) => {
   let userId = req.user?._id;
   if (!userId && req.query.token) {
@@ -91,10 +92,21 @@ const downloadInvoicePdf = asyncHandler(async (req, res) => {
     catch { res.status(401); throw new Error("Invalid token"); }
   }
 
-  const clinicId = req.user?.clinicId; // ← ADDED
-  const sale = await Sale.findOne({ _id: req.params.id, clinicId }) // ← ADDED
+  const clinicId = req.user?.clinicId;
+  const sale = await Sale.findOne({ _id: req.params.id, clinicId })
     .populate("customer", "name phone email address");
   if (!sale) { res.status(404); throw new Error("Sale not found"); }
+
+  // ── ADDED: Fetch clinic details dynamically ──────────────────────
+  const clinic = await Clinic.findOne({ _id: clinicId }).lean();
+  const clinicName     = clinic?.name    || "Clinic";
+  const clinicPhone    = clinic?.phone   || "";
+  const clinicWhatsapp = clinic?.whatsapp || "";
+  const clinicAddress  = [clinic?.address, clinic?.city, clinic?.district, clinic?.state]
+    .filter(Boolean).join(", ");
+  // Phone / WhatsApp display — shows both if both exist, one if only one exists
+  const phoneDisplay = [clinicPhone, clinicWhatsapp].filter(Boolean).join(" / ");
+  // ────────────────────────────────────────────────────────────────
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=${sale.invoiceNo}.pdf`);
@@ -112,13 +124,34 @@ const downloadInvoicePdf = asyncHandler(async (req, res) => {
 
   const cText = (text, x, w, y) => doc.text(String(text), x, y, { width: w, align: "center", lineBreak: false });
 
+  // ── CHANGED: Dynamic clinic header instead of hardcoded values ──
   let y = 10;
   doc.moveTo(L, y).lineTo(R, y).lineWidth(1.5).strokeColor("#000").stroke(); y += 5;
-  doc.fontSize(13).font("Helvetica-Bold").fillColor("#000").text("SHRIYANSH DIGITAL POINT", L, y, { align: "center", width: CW, lineBreak: false }); y += 16;
-  doc.fontSize(7).font("Helvetica").fillColor("#444").text("Ph: 9956692347 / 9616524058", L, y, { align: "center", width: CW, lineBreak: false }); y += 10;
-  doc.fontSize(6.5).fillColor("#666").text("Kailhat Bazar, Near Indian Bank, Chunar, Mirzapur", L, y, { align: "center", width: CW, lineBreak: false }); y += 10;
-  doc.fontSize(9).font("Helvetica-Bold").fillColor("#000").text("INVOICE BILL", L, y, { align: "center", width: CW, lineBreak: false }); y += 12;
+
+  // Clinic name — dynamic
+  doc.fontSize(13).font("Helvetica-Bold").fillColor("#000")
+    .text(clinicName.toUpperCase(), L, y, { align: "center", width: CW, lineBreak: false });
+  y += 16;
+
+  // Phone / WhatsApp — only shown if at least one exists
+  if (phoneDisplay) {
+    doc.fontSize(7).font("Helvetica").fillColor("#444")
+      .text(`Ph: ${phoneDisplay}`, L, y, { align: "center", width: CW, lineBreak: false });
+    y += 10;
+  }
+
+  // Address — only shown if at least one address field exists
+  if (clinicAddress) {
+    doc.fontSize(6.5).fillColor("#666")
+      .text(clinicAddress, L, y, { align: "center", width: CW, lineBreak: false });
+    y += 10;
+  }
+
+  doc.fontSize(9).font("Helvetica-Bold").fillColor("#000")
+    .text("INVOICE BILL", L, y, { align: "center", width: CW, lineBreak: false });
+  y += 12;
   doc.moveTo(L, y).lineTo(R, y).lineWidth(0.7).strokeColor("#000").stroke(); y += 5;
+  // ── END changed header section ───────────────────────────────────
 
   const customerDisplayName = resolveCustomerName(sale);
   const mY = y;
