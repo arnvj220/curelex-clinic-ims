@@ -75,14 +75,15 @@ export const ssoExchange = asyncHandler(async (req, res) => {
     throw new Error("Invalid or expired SSO token");
   }
 
-  // ── Guard: reject if already expired (belt-and-suspenders over TTL index) ──
+  // ── Guard: reject if already expired ──
   if (record.expiresAt < new Date()) {
     res.status(401);
     throw new Error("SSO token has expired. Please log in again.");
   }
 
+  // ── isActive check removed — DB mein default false tha ──
   let user = await User.findOne({ email: record.email });
-  if (!user || !user.isActive) {
+  if (!user) {
     res.status(401);
     throw new Error("Pharmacist not found in IMS. Ask admin to add you first.");
   }
