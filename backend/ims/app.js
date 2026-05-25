@@ -13,7 +13,10 @@ const app = express();
 // CORS
 app.use(
   cors({
-    origin: env.clientUrl || "*",
+    origin: [
+      "https://curelex.in",
+      "https://www.curelex.in",
+    ],
     credentials: true
   })
 );
