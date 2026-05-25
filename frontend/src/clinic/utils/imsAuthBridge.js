@@ -1,4 +1,4 @@
-const IMS_BASE = import.meta.env.VITE_IMS_API_URL || "http://localhost:5000/ims/api/v1";
+const IMS_BASE = import.meta.env.VITE_IMS_API_URL || "https://curelex.in/ims/api/v1";
 
 export async function registerPharmacistInIMS({ fullName, email, password }) {
   try {
