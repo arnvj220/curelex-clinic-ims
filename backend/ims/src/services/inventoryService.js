@@ -1,6 +1,17 @@
 import Inventory from "../models/Inventory.js";
 import Product from "../models/Product.js";
 import StockMovement from "../models/StockMovement.js";
+import mongoose from "mongoose"; // ✅ ADD
+
+// ✅ ADD — purana index auto-drop on startup
+mongoose.connection.once("open", async () => {
+  try {
+    await mongoose.connection.collection("inventories").dropIndex("product_1");
+    console.log("[Inventory] Old index dropped ✅");
+  } catch (e) {
+    console.log("[Inventory] Index already removed");
+  }
+});
 
 const lowStockListeners = [];
 
@@ -8,10 +19,10 @@ const onLowStock = (callback) => {
   lowStockListeners.push(callback);
 };
 
-const ensureInventoryDoc = async (productId, clinicId) => {  // ← added clinicId
-  let doc = await Inventory.findOne({ product: productId, clinicId });  // ← added clinicId
+const ensureInventoryDoc = async (productId, clinicId) => {
+  let doc = await Inventory.findOne({ product: productId, clinicId });
   if (!doc) {
-    doc = await Inventory.create({ product: productId, clinicId, quantity: 0 });  // ← added clinicId
+    doc = await Inventory.create({ product: productId, clinicId, quantity: 0 });
   }
   return doc;
 };
@@ -28,7 +39,7 @@ const changeStock = async ({
 }) => {
   const product = await Product.findById(productId).orFail(() => new Error("Product not found"));
 
-  const inventory = await ensureInventoryDoc(productId, clinicId);  // ← added clinicId
+  const inventory = await ensureInventoryDoc(productId, clinicId);
   const nextQty = Number(inventory.quantity) + Number(quantityChange);
 
   if (nextQty < 0) {
