@@ -390,45 +390,45 @@ router.get('/:id/files/:fileId', auth, async (req, res) => {
 });
 
 // ── POST /api/patients/:id/files  — upload a file ────────────────────────────
-router.post('/:id/files', auth, async (req, res) => {
-  try {
-    const { role, clinicId } = req.user;
-    if (!['admin', 'receptionist', 'doctor'].includes(role))
-      return res.status(403).json({ message: 'Not authorized.' });
+// router.post('/:id/files', auth, async (req, res) => {
+//   try {
+//     const { role, clinicId } = req.user;
+//     if (!['admin', 'receptionist', 'doctor'].includes(role))
+//       return res.status(403).json({ message: 'Not authorized.' });
 
-    const patient = await Patient.findOne({ _id: req.params.id, clinicId });
-    if (!patient) return res.status(404).json({ message: 'Patient not found.' });
+//     const patient = await Patient.findOne({ _id: req.params.id, clinicId });
+//     if (!patient) return res.status(404).json({ message: 'Patient not found.' });
 
-    const { filename, mimeType, data } = req.body; // data = base64 string from frontend
-    if (!filename || !mimeType || !data)
-      return res.status(400).json({ message: 'filename, mimeType, and data are required.' });
+//     const { filename, mimeType, data } = req.body; // data = base64 string from frontend
+//     if (!filename || !mimeType || !data)
+//       return res.status(400).json({ message: 'filename, mimeType, and data are required.' });
 
-    const buffer = Buffer.from(data, 'base64');
+//     const buffer = Buffer.from(data, 'base64');
 
-    patient.files.push({
-      filename,
-      mimeType,
-      size:       buffer.length,
-      uploadedBy: role,
-      data:       buffer,
-    });
+//     patient.files.push({
+//       filename,
+//       mimeType,
+//       size:       buffer.length,
+//       uploadedBy: role,
+//       data:       buffer,
+//     });
 
-    await patient.save();
+//     await patient.save();
 
-    // Return only the new file's metadata (never return binary data)
-    const newFile = patient.files[patient.files.length - 1];
-    res.status(201).json({
-      _id:        newFile._id,
-      filename:   newFile.filename,
-      mimeType:   newFile.mimeType,
-      size:       newFile.size,
-      uploadedBy: newFile.uploadedBy,
-      uploadedAt: newFile.uploadedAt,
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+//     // Return only the new file's metadata (never return binary data)
+//     const newFile = patient.files[patient.files.length - 1];
+//     res.status(201).json({
+//       _id:        newFile._id,
+//       filename:   newFile.filename,
+//       mimeType:   newFile.mimeType,
+//       size:       newFile.size,
+//       uploadedBy: newFile.uploadedBy,
+//       uploadedAt: newFile.uploadedAt,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
 
 // ── DELETE /api/patients/:id/files/:fileId  — delete a file ──────────────────
 router.delete('/:id/files/:fileId', auth, async (req, res) => {
