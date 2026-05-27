@@ -1,10 +1,4 @@
 // src/pages/ReceptionistDashboard.jsx
-// ── CHANGES FROM ORIGINAL ──────────────────────────────────────
-//  1. Import activePlan from useApp
-//  2. Import isSectionVisible from utils/planConfig
-//  3. navItems filtered by plan (followUps hidden for Lite)
-//  4. Tab content guarded — if plan doesn't allow, show upgrade notice
-// ──────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   DashboardLayout, Card, Stat, Btn, Badge, Input, Select,
@@ -13,10 +7,11 @@ import {
 import { FileUploadSection } from '../components/FileUpload';
 import { today, currentTime } from '../utils/helpers';
 import { useApp } from '../context/AppContext';
-import { isSectionVisible } from '../utils/planConfig';   // ✅ NEW
+import { isSectionVisible } from '../utils/planConfig';
 import { AllPatients } from './AdminDashboard';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API        = import.meta.env.VITE_API_URL        || 'http://localhost:5000';
+const CLINIC_BASE = import.meta.env.VITE_CLINIC_API_URL || '/api/clinic';
 
 function getTodayIST() {
   const now       = new Date();
@@ -60,6 +55,145 @@ function PaymentBadge({ method }) {
   );
 }
 
+// ── PDF Generator (same as PrescriptionModal) ─────────────────────────────────
+function generatePrescriptionHTML(prescription, clinicName) {
+  const {
+    patientName, patientAge, patientGender, patientPhone,
+    doctorName, doctorSpecialist, tokenNumber,
+    date, diagnosis, medicines, tests, notes, followUpDate,
+  } = prescription;
+
+  const medsHTML = (medicines || []).length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">No medicines prescribed</td></tr>'
+    : (medicines || []).map((m, i) => `
+        <tr style="border-bottom:1px solid #eee">
+          <td style="padding:8px 10px;font-weight:600">${i + 1}</td>
+          <td style="padding:8px 10px;font-weight:700;color:#0a3d62">${m.name || ''}</td>
+          <td style="padding:8px 10px">${m.dosage || '-'}</td>
+          <td style="padding:8px 10px">${m.frequency || '-'}</td>
+          <td style="padding:8px 10px">${m.duration || '-'}${m.instructions ? `<br><small style="color:#888">${m.instructions}</small>` : ''}</td>
+        </tr>`).join('');
+
+  const testsHTML = (tests || []).length === 0 ? '' : `
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;color:#3498db;border-bottom:2px solid #3498db;padding-bottom:6px;margin-bottom:10px">🔬 Investigations / Tests</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f0f8ff">
+          <th style="padding:8px 10px;text-align:left;width:40px">#</th>
+          <th style="padding:8px 10px;text-align:left">Test Name</th>
+          <th style="padding:8px 10px;text-align:left">Instructions</th>
+        </tr></thead>
+        <tbody>${(tests || []).map((t, i) => `
+          <tr style="border-bottom:1px solid #eee">
+            <td style="padding:8px 10px">${i + 1}</td>
+            <td style="padding:8px 10px;font-weight:700;color:#0a3d62">${t.name || ''}</td>
+            <td style="padding:8px 10px">${t.instructions || '-'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Prescription - ${patientName}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;color:#222;background:#fff}
+    @media print{body{padding:0}.no-print{display:none!important}@page{margin:15mm;size:A4}}
+    .page{max-width:780px;margin:0 auto;padding:24px}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #7c3aed;margin-bottom:18px}
+    .clinic-info h1{font-size:22px;color:#7c3aed;font-weight:800}.clinic-info p{font-size:12px;color:#888;margin-top:2px}
+    .rx-symbol{font-size:60px;color:#7c3aed;font-weight:900;line-height:1;opacity:.15}
+    .doctor-info{text-align:right}.doctor-info h2{font-size:16px;color:#0a3d62;font-weight:700}.doctor-info p{font-size:12px;color:#888}
+    .patient-bar{background:linear-gradient(135deg,#f8f5ff,#f0f8ff);border:1px solid #e8e0ff;border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;gap:24px;flex-wrap:wrap}
+    .patient-field label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;display:block}
+    .patient-field span{font-size:14px;font-weight:700;color:#0a3d62}
+    .section-title{font-size:14px;color:#7c3aed;border-bottom:2px solid #7c3aed;padding-bottom:6px;margin-bottom:10px;font-weight:700}
+    .diagnosis-box{background:#fafafa;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:0 8px 8px 0;margin-bottom:18px;font-size:14px;color:#0a3d62}
+    table{width:100%;border-collapse:collapse;font-size:13px}thead tr{background:#f8f5ff}
+    th{padding:8px 10px;text-align:left;font-size:11px;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .notes-box{background:#fffbf0;border:1px solid #ffe082;border-radius:8px;padding:12px 16px;margin-top:20px;font-size:13px}
+    .followup-box{background:#f0fff4;border:1px solid #a8e6cf;border-radius:8px;padding:12px 16px;margin-top:12px;font-size:13px;display:flex;align-items:center;gap:8px}
+    .footer{margin-top:40px;border-top:1px solid #eee;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-end;font-size:11px;color:#aaa}
+    .signature-line{border-top:1px solid #aaa;padding-top:4px;text-align:center;width:160px;font-size:11px;color:#555}
+    .token-badge{background:#7c3aed;color:#fff;border-radius:8px;padding:4px 12px;font-size:13px;font-weight:700}
+    .print-btn{position:fixed;top:20px;right:20px;background:#7c3aed;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,.4);z-index:1000}
+  </style></head><body>
+  <button class="no-print print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
+  <div class="page">
+    <div class="header">
+      <div class="clinic-info"><h1>${clinicName || 'ClinicFlow'}</h1><p>Medical Prescription</p></div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div class="doctor-info"><h2>Dr. ${doctorName || ''}</h2><p>${doctorSpecialist || 'Doctor'}</p></div>
+        <div class="rx-symbol">Rx</div>
+      </div>
+    </div>
+    <div class="patient-bar">
+      <div class="patient-field"><label>Patient Name</label><span>${patientName || 'N/A'}</span></div>
+      ${patientAge ? `<div class="patient-field"><label>Age</label><span>${patientAge} yrs</span></div>` : ''}
+      ${patientGender ? `<div class="patient-field"><label>Gender</label><span style="text-transform:capitalize">${patientGender}</span></div>` : ''}
+      ${patientPhone ? `<div class="patient-field"><label>Phone</label><span>${patientPhone}</span></div>` : ''}
+      <div class="patient-field"><label>Date</label><span>${date || ''}</span></div>
+      <div class="patient-field"><label>Token</label><span class="token-badge">#${tokenNumber || ''}</span></div>
+    </div>
+    ${diagnosis ? `<div style="margin-bottom:18px"><div class="section-title">📋 Diagnosis / Chief Complaint</div><div class="diagnosis-box">${diagnosis}</div></div>` : ''}
+    <div style="margin-bottom:18px">
+      <div class="section-title">💊 Medicines Prescribed</div>
+      <table><thead><tr><th>#</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration / Instructions</th></tr></thead>
+      <tbody>${medsHTML}</tbody></table>
+    </div>
+    ${testsHTML}
+    ${notes ? `<div class="notes-box"><strong>📝 Advice / Notes:</strong><br><span style="margin-top:4px;display:block">${notes}</span></div>` : ''}
+    ${followUpDate ? `<div class="followup-box"><span style="font-size:18px">📅</span><div><strong>Follow-up Date:</strong> ${followUpDate}</div></div>` : ''}
+    <div class="footer">
+      <div><div>Generated by ClinicFlow · ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div><div style="margin-top:2px">This prescription is computer generated.</div></div>
+      <div class="signature-line">Dr. ${doctorName || ''}<br>Signature</div>
+    </div>
+  </div></body></html>`;
+}
+
+// ── Rx PDF Button — fetches prescription and opens PDF ───────────────────────
+function RxPdfButton({ patientId, clinicName }) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('clinic_token');
+      const res   = await fetch(`${CLINIC_BASE}/prescriptions/patient/${patientId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.prescriptions?.length) {
+        alert('No prescription found for this patient.');
+        return;
+      }
+      const rx   = data.prescriptions[0];
+      const html = generatePrescriptionHTML(rx, clinicName || rx.clinicName || '');
+      const win  = window.open('', '_blank');
+      if (win) { win.document.write(html); win.document.close(); }
+    } catch (e) {
+      alert('Failed to load prescription: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      title="View Prescription PDF"
+      style={{
+        background: loading ? 'rgba(124,58,237,0.05)' : 'rgba(124,58,237,0.10)',
+        border: '1px solid rgba(124,58,237,0.30)',
+        borderRadius: 7, padding: '4px 10px', cursor: loading ? 'not-allowed' : 'pointer',
+        fontSize: 12, color: '#7c3aed', fontWeight: 700, fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: 4, opacity: loading ? 0.7 : 1,
+      }}
+    >
+      {loading ? '⏳' : '📋 Rx'}
+    </button>
+  );
+}
+
 function PhoneInput({ label, value, onChange, placeholder }) {
   const isFull = value.length === 10;
   function handleChange(e) {
@@ -100,9 +234,7 @@ function PastFileRow({ file, patientId }) {
       const blob = await downloadPatientFile(patientId, String(file._id));
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
-      a.href     = url;
-      a.download = file.filename;
-      a.click();
+      a.href     = url; a.download = file.filename; a.click();
       URL.revokeObjectURL(url);
     } catch (e) { alert('Download failed: ' + e.message); }
     finally { setDownloading(false); }
@@ -137,10 +269,8 @@ function PastFilesPreview({ phone }) {
       const visits = await getPatientHistory(phone);
       setHistory(visits || []);
       setExpanded(true);
-    } catch (e) {
-      setHistory([]);
-      setExpanded(true);
-    } finally { setLoading(false); }
+    } catch (e) { setHistory([]); setExpanded(true); }
+    finally { setLoading(false); }
   }
 
   const visitsWithFiles = history ? history.filter((v) => v.files?.length > 0) : [];
@@ -183,7 +313,6 @@ function PastFilesPreview({ phone }) {
   );
 }
 
-// ── Upgrade notice shown when a tab is not in the plan ────────
 function PlanUpgradeNotice({ requiredPlan, currentPlan, onGoToPlans }) {
   const colors = {
     plus: { grad: 'linear-gradient(135deg,#0a3d62,#1565a8)', shadow: 'rgba(10,61,98,0.25)' },
@@ -199,10 +328,7 @@ function PlanUpgradeNotice({ requiredPlan, currentPlan, onGoToPlans }) {
       <div style={{ fontSize:14, color:'#4a6278', maxWidth:380, lineHeight:1.65, marginBottom:28 }}>
         Upgrade your plan to unlock this section and many more advanced features.
       </div>
-      <button
-        onClick={onGoToPlans}
-        style={{ padding:'13px 28px', borderRadius:11, border:'none', background:c.grad, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:`0 5px 18px ${c.shadow}` }}
-      >
+      <button onClick={onGoToPlans} style={{ padding:'13px 28px', borderRadius:11, border:'none', background:c.grad, color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:`0 5px 18px ${c.shadow}` }}>
         🚀 Upgrade Plan
       </button>
     </div>
@@ -214,7 +340,7 @@ function PlanUpgradeNotice({ requiredPlan, currentPlan, onGoToPlans }) {
    ══════════════════════════════════════════════════════════════ */
 export default function ReceptionistDashboard({ onGoToPlans }) {
   const {
-    session, logout, activePlan,           // ✅ activePlan added
+    session, logout, activePlan,
     getPatients, getUsers,
     updatePatientStatus, updateFollowUp, addPatient,
     uploadPatientFile, getPatientFiles, downloadPatientFile, deletePatientFile,
@@ -245,10 +371,8 @@ export default function ReceptionistDashboard({ onGoToPlans }) {
   const waitingCount = todayQueue.filter((p) => p.status === 'waiting').length;
   const receptionistName = session?.user?.name || 'Receptionist';
 
-  // ── Plan-filtered nav items ───────────────────────────────────
-  // Map tab keys to the sidebar section keys used in planConfig
   const TAB_TO_SECTION = {
-    register:  'allPatients',   // register is always tied to allPatients access
+    register:  'allPatients',
     queue:     'allPatients',
     all:       'allPatients',
     followups: 'followUps',
@@ -261,7 +385,6 @@ export default function ReceptionistDashboard({ onGoToPlans }) {
     { icon: '📅', label: 'Follow-ups',       tab: 'followups', section: 'followUps' },
   ];
 
-  // Filter nav by plan
   const navItems = allNavItems
     .filter(item => isSectionVisible(activePlan ?? 'lite', item.section))
     .map(item => ({
@@ -272,7 +395,6 @@ export default function ReceptionistDashboard({ onGoToPlans }) {
       badge:   item.badge,
     }));
 
-  // If current tab was hidden by plan change, reset to register
   useEffect(() => {
     const currentSection = TAB_TO_SECTION[tab];
     if (currentSection && !isSectionVisible(activePlan ?? 'lite', currentSection)) {
@@ -302,11 +424,7 @@ export default function ReceptionistDashboard({ onGoToPlans }) {
     setTab('queue');
   }
 
-  // Redirect to plans page — customize this to match your routing
-  function goToPlans() {
-    // e.g. navigate('/plans') or setPage('planSelection')
-    onGoToPlans?.();
-  }
+  function goToPlans() { onGoToPlans?.(); }
 
   return (
     <>
@@ -331,24 +449,19 @@ export default function ReceptionistDashboard({ onGoToPlans }) {
         accent="#0f766e"
       >
         {tab === 'register'  && <PatientRegister doctors={doctors} patients={patients} onRegistered={handleRegister} />}
-        {tab === 'queue'     && <TodayQueue todayQueue={todayQueue} doctors={doctors} onUpdateStatus={handleUpdateStatus} onUpdateFollowUp={handleUpdateFollowUp} onUploadFile={uploadPatientFile} onGetFiles={getPatientFiles} onDownloadFile={downloadPatientFile} onDeleteFile={deletePatientFile} />}
+        {tab === 'queue'     && <TodayQueue todayQueue={todayQueue} doctors={doctors} onUpdateStatus={handleUpdateStatus} onUpdateFollowUp={handleUpdateFollowUp} onUploadFile={uploadPatientFile} onGetFiles={getPatientFiles} onDownloadFile={downloadPatientFile} onDeleteFile={deletePatientFile} clinicName={clinicName} />}
         {tab === 'all'       && <AllPatients patients={patients} />}
-        {/* ✅ Follow-ups tab: guarded by plan */}
         {tab === 'followups' && (
           isSectionVisible(activePlan ?? 'lite', 'followUps')
             ? <FollowUpsTab patients={patients} onUpdateFollowUp={handleUpdateFollowUp} />
             : <PlanUpgradeNotice requiredPlan="plus" currentPlan={activePlan} onGoToPlans={goToPlans} />
         )}
-
         {showToken && <TokenPopup patient={showToken} onClose={() => setShowToken(null)} />}
       </DashboardLayout>
     </>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TOKEN POPUP
-   ══════════════════════════════════════════════════════════════ */
 function TokenPopup({ patient, onClose }) {
   return (
     <Modal title="🎉 Token Generated!" onClose={onClose} width={420}>
@@ -603,15 +716,7 @@ function DoctorSelector({ doctors, patients, form, f }) {
             const limit = doc.dailyTokenLimit ?? 0;
             const limitReached = limit > 0 && todayCount >= limit;
             return (
-              <div key={doc._id} onClick={() => {
-                if (!limitReached) {
-                  f('doctorId', String(doc._id));
-                  f('doctorName', doc.name);  // This is important!
-                  if (doc.fee) {
-                    f('totalFee', String(doc.fee));
-                  }
-                }
-              }}
+              <div key={doc._id} onClick={() => { if (!limitReached) { f('doctorId', String(doc._id)); f('doctorName', doc.name); if (doc.fee) f('totalFee', String(doc.fee)); } }}
                 style={{ border: `2px solid ${isSelected ? 'var(--primary)' : limitReached ? '#e74c3c' : 'var(--border)'}`, borderRadius: 10, padding: '12px 14px', cursor: limitReached ? 'not-allowed' : 'pointer', background: isSelected ? 'var(--primary-light)' : limitReached ? 'rgba(231,76,60,0.04)' : 'var(--surface)', opacity: limitReached ? 0.7 : 1, transition: '.15s' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <div>
@@ -643,10 +748,7 @@ function PaymentCard({ form, f, dues }) {
           <div style={{ display: 'flex', gap: 8 }}>
             {[{ value: 'cash', label: '💵 Cash', color: '#00a878', bg: 'rgba(0,184,148,0.10)', border: 'rgba(0,184,148,0.40)' }, { value: 'upi', label: '📲 UPI', color: '#7c3aed', bg: 'rgba(124,58,237,0.10)', border: 'rgba(124,58,237,0.40)' }].map((opt) => {
               const selected = form.paymentMethod === opt.value;
-              return (
-                <button key={opt.value} type="button" onClick={() => f('paymentMethod', opt.value)}
-                  style={{ flex: 1, padding: '10px 0', borderRadius: 10, cursor: 'pointer', border: `2px solid ${selected ? opt.border : 'var(--border)'}`, background: selected ? opt.bg : 'var(--surface)', color: selected ? opt.color : 'var(--text-muted)', fontWeight: selected ? 700 : 500, fontSize: 14, fontFamily: 'inherit', transition: '.15s' }}>{opt.label}</button>
-              );
+              return <button key={opt.value} type="button" onClick={() => f('paymentMethod', opt.value)} style={{ flex: 1, padding: '10px 0', borderRadius: 10, cursor: 'pointer', border: `2px solid ${selected ? opt.border : 'var(--border)'}`, background: selected ? opt.bg : 'var(--surface)', color: selected ? opt.color : 'var(--text-muted)', fontWeight: selected ? 700 : 500, fontSize: 14, fontFamily: 'inherit', transition: '.15s' }}>{opt.label}</button>;
             })}
           </div>
         </div>
@@ -682,63 +784,27 @@ function PatientRegister({ doctors, patients, onRegistered }) {
 }
 
 function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack }) {
-  const init = { 
-    name: '', age: '', 
-    phone: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), 
-    whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), 
-    gender: 'male', symptoms: '', 
-    doctorId: '', doctorName: '', 
-    totalFee: '', paid: '', notes: '', 
-    paymentMethod: 'cash' 
-  };
+  const init = { name: '', age: '', phone: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), whatsapp: (prefillPhone || '').replace(/\D/g, '').slice(0, 10), gender: 'male', symptoms: '', doctorId: '', doctorName: '', totalFee: '', paid: '', notes: '', paymentMethod: 'cash' };
   const [form, setForm] = useState(init);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  
   const f = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   const dues = Math.max(0, (parseFloat(form.totalFee) || 0) - (parseFloat(form.paid) || 0));
-  
   async function register() {
     if (!form.name.trim()) { setErr('Patient name is required.'); return; }
     if (!form.doctorId) { setErr('Please select a doctor.'); return; }
     if (!form.symptoms.trim()) { setErr('Please describe the symptoms.'); return; }
     if (form.phone && form.phone.length !== 10) { setErr('Phone number must be exactly 10 digits.'); return; }
     if (form.whatsapp && form.whatsapp.length !== 10) { setErr('WhatsApp number must be exactly 10 digits.'); return; }
-    
-    setBusy(true); 
-    setErr('');
-    
+    setBusy(true); setErr('');
     try {
-      // Find the selected doctor to get the name
       const selectedDoctor = doctors.find(doc => String(doc._id) === String(form.doctorId));
       const doctorName = selectedDoctor?.name || '';
-      
-      if (!doctorName) {
-        setErr('Doctor not found. Please select a valid doctor.');
-        return;
-      }
-      
-      await onRegistered({ 
-        name: form.name.trim(), 
-        age: form.age, 
-        phone: form.phone, 
-        whatsapp: form.whatsapp, 
-        gender: form.gender, 
-        symptoms: form.symptoms.trim(), 
-        notes: form.notes, 
-        doctorId: form.doctorId, 
-        doctorName: doctorName,  // Make sure this is passed
-        totalFee: parseFloat(form.totalFee) || 0, 
-        paid: parseFloat(form.paid) || 0, 
-        paymentMethod: form.paymentMethod 
-      }); 
-      setForm(init); 
-    } catch (e) {
-      console.error('Registration error:', e);
-      setErr(e.message || 'Registration failed. Please try again.'); 
-    } finally { 
-      setBusy(false); 
-    }
+      if (!doctorName) { setErr('Doctor not found. Please select a valid doctor.'); return; }
+      await onRegistered({ name: form.name.trim(), age: form.age, phone: form.phone, whatsapp: form.whatsapp, gender: form.gender, symptoms: form.symptoms.trim(), notes: form.notes, doctorId: form.doctorId, doctorName, totalFee: parseFloat(form.totalFee) || 0, paid: parseFloat(form.paid) || 0, paymentMethod: form.paymentMethod });
+      setForm(init);
+    } catch (e) { setErr(e.message || 'Registration failed. Please try again.'); }
+    finally { setBusy(false); }
   }
   return (
     <div>
@@ -780,7 +846,8 @@ function NewPatientForm({ doctors, patients, prefillPhone, onRegistered, onBack 
 const STATUS_ORDER = { waiting: 0, called: 1, done: 2 };
 function sortQueue(patients) { return [...patients].sort((a, b) => { const d = STATUS_ORDER[a.status] - STATUS_ORDER[b.status]; return d !== 0 ? d : a.token - b.token; }); }
 
-function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile }) {
+// ✅ clinicName passed down to QueueCard → RxPdfButton
+function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile, clinicName }) {
   const sorted  = sortQueue(todayQueue);
   const waiting = sorted.filter((p) => p.status === 'waiting');
   const called  = sorted.filter((p) => p.status === 'called');
@@ -806,9 +873,9 @@ function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onU
               <span style={{ fontSize: 18 }}>👨‍⚕️</span><span style={{ fontWeight: 700, fontSize: 15 }}>{doc.name}</span><span style={{ fontSize: 13, color: 'var(--text-muted)' }}>— {doc.specialist}</span><Badge color="blue">{docQ.length} patients</Badge>
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
-              {activeQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />)}
+              {activeQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} clinicName={clinicName} />)}
               {activeQ.length > 0 && doneQ.length > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0' }}><div style={{ flex: 1, height: 1, background: 'var(--border)' }} /><span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Completed</span><div style={{ flex: 1, height: 1, background: 'var(--border)' }} /></div>}
-              {doneQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} />)}
+              {doneQ.map((p) => <QueueCard key={p._id} patient={p} onUpdateStatus={onUpdateStatus} onUpdateFollowUp={onUpdateFollowUp} onUploadFile={onUploadFile} onGetFiles={onGetFiles} onDownloadFile={onDownloadFile} onDeleteFile={onDeleteFile} clinicName={clinicName} />)}
             </div>
           </div>
         );
@@ -818,7 +885,7 @@ function TodayQueue({ todayQueue, doctors, onUpdateStatus, onUpdateFollowUp, onU
   );
 }
 
-function QueueCard({ patient: p, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile }) {
+function QueueCard({ patient: p, onUpdateStatus, onUpdateFollowUp, onUploadFile, onGetFiles, onDownloadFile, onDeleteFile, clinicName }) {
   const pid = p._id || p.id;
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [showFiles,    setShowFiles]    = useState(false);
@@ -836,6 +903,7 @@ function QueueCard({ patient: p, onUpdateStatus, onUpdateFollowUp, onUploadFile,
   async function handleUploadFile(patientId, file) { await onUploadFile(patientId, file); const result = await onGetFiles(pid); setFiles(Array.isArray(result) ? result : (result?.files || [])); }
   async function handleDeleteFile(patientId, fileId) { await onDeleteFile(patientId, fileId); const result = await onGetFiles(pid); setFiles(Array.isArray(result) ? result : (result?.files || [])); }
   async function handleDownloadFile(patientId, fileId) { if (!fileId || fileId === patientId) throw new Error('Invalid file ID'); return onDownloadFile(patientId, fileId); }
+
   return (
     <div style={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
       <div style={{ background: statusBg[p.status], padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -856,6 +924,8 @@ function QueueCard({ patient: p, onUpdateStatus, onUpdateFollowUp, onUploadFile,
           <Badge color={p.status === 'called' ? 'yellow' : p.status === 'done' ? 'gray' : 'blue'}>{p.status === 'waiting' ? '⏳ Waiting' : p.status === 'called' ? '📢 Called' : '✓ Done'}</Badge>
           {p.status === 'waiting' && <Btn size="sm" variant="warning" onClick={() => onUpdateStatus(pid, 'called')}>Call</Btn>}
           {p.status === 'called'  && <Btn size="sm" variant="accent"  onClick={() => onUpdateStatus(pid, 'done')}>Done</Btn>}
+          {/* ✅ NEW: Rx PDF button — shows for ALL patients (done or not) */}
+          <RxPdfButton patientId={pid} clinicName={clinicName} />
           <button onClick={() => setShowFollowUp((v) => !v)} title="Set follow-up date" style={{ background: p.followUpDate ? 'rgba(124,58,237,0.10)' : 'none', border: '1px solid #c5d5e8', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 14, color: '#7c3aed' }}>📅</button>
           <button onClick={() => setShowFiles((v) => !v)} title="Manage patient files" style={{ background: showFiles ? 'rgba(52,152,219,0.15)' : 'none', border: '1px solid #c5d5e8', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', fontSize: 14, color: showFiles ? '#3498db' : 'var(--text-light)' }}>📎 {files.length > 0 && <span style={{ fontSize: 11, fontWeight: 700 }}>({files.length})</span>}</button>
         </div>
