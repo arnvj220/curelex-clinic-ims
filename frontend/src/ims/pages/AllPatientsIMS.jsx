@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
+// ✅ FIXED: was '/api' — missing '/clinic', causing 404 on all patient/file requests
 const CLINIC_BASE = import.meta.env.VITE_CLINIC_API_URL
   ? `${import.meta.env.VITE_CLINIC_API_URL}`
-  : '/api';
+  : '/api/clinic';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 function getTodayIST() {
@@ -244,14 +245,14 @@ function DoctorSection({ doctor, patients, defaultOpen }) {
 
 // ── Main component ─────────────────────────────────────────────────────────
 export default function AllPatientsIMS() {
-  const [patients,    setPatients]    = useState([]);
-  const [doctors,     setDoctors]     = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState('');
-  const [dateFilter,  setDateFilter]  = useState('today');
-  const [doctorFilter,setDoctorFilter]= useState('all');
-  const [search,      setSearch]      = useState('');
-  const [statusFilter,setStatusFilter]= useState('all');
+  const [patients,     setPatients]     = useState([]);
+  const [doctors,      setDoctors]      = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState('');
+  const [dateFilter,   setDateFilter]   = useState('today');
+  const [doctorFilter, setDoctorFilter] = useState('all');
+  const [search,       setSearch]       = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const todayStr = getTodayIST();
 
@@ -281,8 +282,8 @@ export default function AllPatientsIMS() {
   // ── filtering ──
   const filtered = patients.filter(p => {
     const matchDate =
-      dateFilter === 'today'    ? p.date === todayStr :
-      dateFilter === 'week'     ? p.date >= (() => { const d=new Date(); d.setDate(d.getDate()-6); return d.toISOString().split('T')[0]; })() :
+      dateFilter === 'today' ? p.date === todayStr :
+      dateFilter === 'week'  ? p.date >= (() => { const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().split('T')[0]; })() :
       true;
     const matchDoctor = doctorFilter === 'all' || String(p.doctorId) === doctorFilter;
     const matchStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -315,7 +316,6 @@ export default function AllPatientsIMS() {
 
       {/* ── filters ── */}
       <div style={{ background: '#fff', border: '1.5px solid #dce9f5', borderRadius: 12, padding: '14px 16px', marginBottom: 20, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        {/* search */}
         <div style={{ flex: '1 1 200px', minWidth: 0 }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: '#8fa8bc', textTransform: 'uppercase', letterSpacing: 0.4, display: 'block', marginBottom: 4 }}>Search</label>
           <input
@@ -325,7 +325,6 @@ export default function AllPatientsIMS() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        {/* date */}
         <div style={{ flex: '0 0 140px' }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: '#8fa8bc', textTransform: 'uppercase', letterSpacing: 0.4, display: 'block', marginBottom: 4 }}>Date</label>
           <select style={selectStyle} value={dateFilter} onChange={e => setDateFilter(e.target.value)}>
@@ -334,7 +333,6 @@ export default function AllPatientsIMS() {
             <option value="all">All time</option>
           </select>
         </div>
-        {/* doctor */}
         <div style={{ flex: '0 0 180px' }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: '#8fa8bc', textTransform: 'uppercase', letterSpacing: 0.4, display: 'block', marginBottom: 4 }}>Doctor</label>
           <select style={selectStyle} value={doctorFilter} onChange={e => setDoctorFilter(e.target.value)}>
@@ -342,7 +340,6 @@ export default function AllPatientsIMS() {
             {doctors.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
           </select>
         </div>
-        {/* status */}
         <div style={{ flex: '0 0 140px' }}>
           <label style={{ fontSize: 11, fontWeight: 700, color: '#8fa8bc', textTransform: 'uppercase', letterSpacing: 0.4, display: 'block', marginBottom: 4 }}>Status</label>
           <select style={selectStyle} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -352,7 +349,6 @@ export default function AllPatientsIMS() {
             <option value="done">Done</option>
           </select>
         </div>
-        {/* refresh */}
         <button
           onClick={load}
           disabled={loading}
@@ -385,13 +381,11 @@ export default function AllPatientsIMS() {
         </div>
       ) : (
         <>
-          {/* tip */}
           <div style={{ background: 'rgba(21,101,168,0.05)', border: '1px solid rgba(21,101,168,0.15)', borderRadius: 10, padding: '9px 14px', marginBottom: 16, fontSize: 12, color: '#1565a8', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>💡</span>
             <span>Click any patient row to view files uploaded by the doctor or receptionist for that visit.</span>
           </div>
 
-          {/* doctor sections */}
           {Object.values(grouped).map((g, i) => (
             <DoctorSection
               key={g.id}
