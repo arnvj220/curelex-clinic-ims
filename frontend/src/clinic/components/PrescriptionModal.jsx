@@ -1,6 +1,5 @@
 // frontend/src/clinic/components/PrescriptionModal.jsx
 // ── Complete prescription writing UI ──────────────────────────────────────────
-// ✅ CHANGE from original: accepts `onSaved` prop — called when prescription is created/updated
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -27,7 +26,7 @@ const DOSAGE_OPTIONS = [
 
 // ── Autocomplete input ────────────────────────────────────────────────────────
 function AutocompleteInput({ value, onChange, suggestions = [], placeholder, style = {} }) {
-  const [open,    setOpen]    = useState(false);
+  const [open,     setOpen]     = useState(false);
   const [filtered, setFiltered] = useState([]);
   const ref = useRef(null);
 
@@ -67,9 +66,7 @@ function AutocompleteInput({ value, onChange, suggestions = [], placeholder, sty
           boxSizing: 'border-box', color: '#0a3d62',
           transition: 'border-color .15s',
         }}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') setOpen(false);
-        }}
+        onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
       />
       {open && (
         <div style={{
@@ -144,7 +141,6 @@ function MedicineRow({ med, idx, suggestions, onChange, onRemove }) {
             {DOSAGE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
-
         <div>
           <label style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: 3 }}>Frequency</label>
           <select
@@ -170,7 +166,6 @@ function MedicineRow({ med, idx, suggestions, onChange, onRemove }) {
             {DURATION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
           </select>
         </div>
-
         <div>
           <label style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: 3 }}>Special Instructions</label>
           <input
@@ -312,7 +307,6 @@ function generatePrescriptionHTML(prescription, clinicName) {
 </head>
 <body>
   <button class="no-print print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
-
   <div class="page">
     <div class="header">
       <div class="clinic-info">
@@ -327,74 +321,31 @@ function generatePrescriptionHTML(prescription, clinicName) {
         <div class="rx-symbol">Rx</div>
       </div>
     </div>
-
     <div class="patient-bar">
-      <div class="patient-field">
-        <label>Patient Name</label>
-        <span>${patientName || 'N/A'}</span>
-      </div>
+      <div class="patient-field"><label>Patient Name</label><span>${patientName || 'N/A'}</span></div>
       ${patientAge ? `<div class="patient-field"><label>Age</label><span>${patientAge} yrs</span></div>` : ''}
       ${patientGender ? `<div class="patient-field"><label>Gender</label><span style="text-transform:capitalize">${patientGender}</span></div>` : ''}
       ${patientPhone ? `<div class="patient-field"><label>Phone</label><span>${patientPhone}</span></div>` : ''}
-      <div class="patient-field">
-        <label>Date</label>
-        <span>${date || ''}</span>
-      </div>
-      <div class="patient-field">
-        <label>Token</label>
-        <span class="token-badge">#${tokenNumber || ''}</span>
-      </div>
+      <div class="patient-field"><label>Date</label><span>${date || ''}</span></div>
+      <div class="patient-field"><label>Token</label><span class="token-badge">#${tokenNumber || ''}</span></div>
     </div>
-
-    ${diagnosis ? `
-      <div style="margin-bottom:18px">
-        <div class="section-title">📋 Diagnosis / Chief Complaint</div>
-        <div class="diagnosis-box">${diagnosis}</div>
-      </div>
-    ` : ''}
-
+    ${diagnosis ? `<div style="margin-bottom:18px"><div class="section-title">📋 Diagnosis / Chief Complaint</div><div class="diagnosis-box">${diagnosis}</div></div>` : ''}
     <div style="margin-bottom:18px">
       <div class="section-title">💊 Medicines Prescribed</div>
       <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Medicine</th>
-            <th>Dosage</th>
-            <th>Frequency</th>
-            <th>Duration / Instructions</th>
-          </tr>
-        </thead>
+        <thead><tr><th>#</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration / Instructions</th></tr></thead>
         <tbody>${medsHTML}</tbody>
       </table>
     </div>
-
     ${testsHTML}
-
-    ${notes ? `
-      <div class="notes-box">
-        <strong>📝 Advice / Notes:</strong><br>
-        <span style="margin-top:4px;display:block">${notes}</span>
-      </div>
-    ` : ''}
-
-    ${followUpDate ? `
-      <div class="followup-box">
-        <span style="font-size:18px">📅</span>
-        <div>
-          <strong>Follow-up Date:</strong> ${followUpDate}
-        </div>
-      </div>
-    ` : ''}
-
+    ${notes ? `<div class="notes-box"><strong>📝 Advice / Notes:</strong><br><span style="margin-top:4px;display:block">${notes}</span></div>` : ''}
+    ${followUpDate ? `<div class="followup-box"><span style="font-size:18px">📅</span><div><strong>Follow-up Date:</strong> ${followUpDate}</div></div>` : ''}
     <div class="footer">
       <div>
         <div>Generated by ClinicFlow · ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
         <div style="margin-top:2px">This prescription is computer generated.</div>
       </div>
-      <div class="signature-line">
-        Dr. ${doctorName || ''}<br>Signature
-      </div>
+      <div class="signature-line">Dr. ${doctorName || ''}<br>Signature</div>
     </div>
   </div>
 </body>
@@ -402,7 +353,6 @@ function generatePrescriptionHTML(prescription, clinicName) {
 }
 
 // ── Main Modal Component ──────────────────────────────────────────────────────
-// ✅ Added `onSaved` prop — called after a prescription is created/updated
 export default function PrescriptionModal({ patient, doctorUser, clinicName, onClose, token: authToken, onSaved }) {
   const [medicines,    setMedicines]    = useState([]);
   const [tests,        setTests]        = useState([]);
@@ -417,6 +367,9 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
   const [medSuggestions,  setMedSuggestions]  = useState([]);
   const [testSuggestions, setTestSuggestions] = useState([]);
   const [loadingAC,       setLoadingAC]       = useState(false);
+
+  // ✅ FIX: useRef guard prevents duplicate API calls even if React re-renders mid-save
+  const savingRef = useRef(false);
 
   const patientId = patient?._id || patient?.id;
 
@@ -442,13 +395,13 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
         if (rxData.prescriptions && rxData.prescriptions.length > 0) {
           const existing = rxData.prescriptions[0];
           setSavedRx(existing);
-          setMedicines(existing.medicines || []);
-          setTests(existing.tests         || []);
-          setDiagnosis(existing.diagnosis  || '');
-          setNotes(existing.notes          || '');
+          setMedicines(existing.medicines    || []);
+          setTests(existing.tests            || []);
+          setDiagnosis(existing.diagnosis    || '');
+          setNotes(existing.notes            || '');
           setFollowUpDate(existing.followUpDate || '');
           setSaved(true);
-          onSaved?.(); // ✅ mark as Rx exists on load
+          onSaved?.();
         }
       }
     } catch (e) {
@@ -467,6 +420,9 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
   const updateTest = (i, t) => setTests((p) => p.map((m, idx) => idx === i ? t : m));
 
   async function handleSave() {
+    // ✅ FIX: double-click / re-render guard using ref (more reliable than state alone)
+    if (savingRef.current) return;
+
     const validMeds  = medicines.filter((m) => m.name?.trim());
     const validTests = tests.filter((t) => t.name?.trim());
 
@@ -475,7 +431,10 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
       return;
     }
 
-    setBusy(true); setError('');
+    savingRef.current = true;  // ✅ lock immediately (before any await)
+    setBusy(true);
+    setError('');
+
     try {
       const headers = { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' };
       const payload = { patientId, diagnosis, medicines: validMeds, tests: validTests, notes, followUpDate };
@@ -496,7 +455,7 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
 
       setSavedRx(data.prescription);
       setSaved(true);
-      onSaved?.(); // ✅ notify parent that Rx was saved
+      onSaved?.();
 
       const acRes = await fetch(`${BASE}/prescriptions/autocomplete`, { headers });
       if (acRes.ok) {
@@ -508,19 +467,20 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
       setError(e.message);
     } finally {
       setBusy(false);
+      savingRef.current = false;  // ✅ unlock after done
     }
   }
 
   function handlePDF() {
     const rxData = savedRx || {
-      patientName:   patient?.name     || '',
-      patientAge:    patient?.age      || '',
-      patientGender: patient?.gender   || '',
-      patientPhone:  patient?.phone    || '',
-      doctorName:    doctorUser?.name  || '',
+      patientName:      patient?.name       || '',
+      patientAge:       patient?.age        || '',
+      patientGender:    patient?.gender     || '',
+      patientPhone:     patient?.phone      || '',
+      doctorName:       doctorUser?.name    || '',
       doctorSpecialist: doctorUser?.specialist || '',
-      tokenNumber:   patient?.token    || '',
-      date:          patient?.date     || '',
+      tokenNumber:      patient?.token      || '',
+      date:             patient?.date       || '',
       diagnosis, medicines, tests, notes, followUpDate,
     };
     const html = generatePrescriptionHTML(rxData, clinicName || '');
@@ -627,36 +587,20 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#7c3aed', display: 'flex', alignItems: 'center', gap: 6 }}>
                   💊 Medicines
-                  <span style={{ fontSize: 11, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', borderRadius: 20, padding: '1px 8px' }}>
-                    {medicines.length}
-                  </span>
+                  <span style={{ fontSize: 11, background: 'rgba(124,58,237,0.1)', color: '#7c3aed', borderRadius: 20, padding: '1px 8px' }}>{medicines.length}</span>
                 </div>
-                <button
-                  onClick={addMedicine}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #7c3aed', background: 'rgba(124,58,237,0.08)', color: '#7c3aed', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}
-                >
+                <button onClick={addMedicine} style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #7c3aed', background: 'rgba(124,58,237,0.08)', color: '#7c3aed', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
                   + Add Medicine
                 </button>
               </div>
-
               {medicines.length === 0 ? (
-                <div
-                  onClick={addMedicine}
-                  style={{ border: '2px dashed rgba(124,58,237,0.25)', borderRadius: 10, padding: '20px', textAlign: 'center', cursor: 'pointer', color: '#7c3aed', fontSize: 13, background: 'rgba(124,58,237,0.02)' }}
-                >
+                <div onClick={addMedicine} style={{ border: '2px dashed rgba(124,58,237,0.25)', borderRadius: 10, padding: '20px', textAlign: 'center', cursor: 'pointer', color: '#7c3aed', fontSize: 13, background: 'rgba(124,58,237,0.02)' }}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>💊</div>
                   Click to add a medicine
                 </div>
               ) : (
                 medicines.map((med, i) => (
-                  <MedicineRow
-                    key={i}
-                    med={med}
-                    idx={i}
-                    suggestions={medSuggestions}
-                    onChange={updateMedicine}
-                    onRemove={removeMedicine}
-                  />
+                  <MedicineRow key={i} med={med} idx={i} suggestions={medSuggestions} onChange={updateMedicine} onRemove={removeMedicine} />
                 ))
               )}
             </div>
@@ -666,36 +610,20 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#3498db', display: 'flex', alignItems: 'center', gap: 6 }}>
                   🔬 Investigations / Tests
-                  <span style={{ fontSize: 11, background: 'rgba(52,152,219,0.1)', color: '#3498db', borderRadius: 20, padding: '1px 8px' }}>
-                    {tests.length}
-                  </span>
+                  <span style={{ fontSize: 11, background: 'rgba(52,152,219,0.1)', color: '#3498db', borderRadius: 20, padding: '1px 8px' }}>{tests.length}</span>
                 </div>
-                <button
-                  onClick={addTest}
-                  style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #3498db', background: 'rgba(52,152,219,0.08)', color: '#3498db', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
+                <button onClick={addTest} style={{ padding: '6px 14px', borderRadius: 8, border: '1.5px solid #3498db', background: 'rgba(52,152,219,0.08)', color: '#3498db', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   + Add Test
                 </button>
               </div>
-
               {tests.length === 0 ? (
-                <div
-                  onClick={addTest}
-                  style={{ border: '2px dashed rgba(52,152,219,0.25)', borderRadius: 10, padding: '20px', textAlign: 'center', cursor: 'pointer', color: '#3498db', fontSize: 13, background: 'rgba(52,152,219,0.02)' }}
-                >
+                <div onClick={addTest} style={{ border: '2px dashed rgba(52,152,219,0.25)', borderRadius: 10, padding: '20px', textAlign: 'center', cursor: 'pointer', color: '#3498db', fontSize: 13, background: 'rgba(52,152,219,0.02)' }}>
                   <div style={{ fontSize: 28, marginBottom: 6 }}>🔬</div>
                   Click to add a test / investigation
                 </div>
               ) : (
                 tests.map((test, i) => (
-                  <TestRow
-                    key={i}
-                    test={test}
-                    idx={i}
-                    suggestions={testSuggestions}
-                    onChange={updateTest}
-                    onRemove={removeTest}
-                  />
+                  <TestRow key={i} test={test} idx={i} suggestions={testSuggestions} onChange={updateTest} onRemove={removeTest} />
                 ))
               )}
             </div>
@@ -772,6 +700,7 @@ export default function PrescriptionModal({ patient, doctorUser, clinicName, onC
                 cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 boxShadow: '0 4px 12px rgba(124,58,237,0.35)',
                 display: 'flex', alignItems: 'center', gap: 6,
+                opacity: busy ? 0.8 : 1,
               }}
             >
               {busy ? '⏳ Saving…' : saved ? '💾 Update Prescription' : '💾 Save Prescription'}

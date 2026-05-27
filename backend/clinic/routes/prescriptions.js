@@ -20,6 +20,15 @@ function toObjectId(val) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: get today's date in IST as YYYY-MM-DD
+// ─────────────────────────────────────────────────────────────────────────────
+function getTodayIST() {
+  const now = new Date();
+  const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+  return ist.toISOString().split('T')[0];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Helper: update doctor's medicine/test dictionary
 // ─────────────────────────────────────────────────────────────────────────────
 async function updateDoctorDictionary(doctorId, clinicId, medicines = [], tests = []) {
@@ -51,7 +60,6 @@ async function updateDoctorDictionary(doctorId, clinicId, medicines = [], tests 
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', auth, async (req, res) => {
   try {
-    // JWT payload has `id` (string) — cast to ObjectId for Mongoose
     const doctorId = toObjectId(req.user.id);
     const clinicId = toObjectId(req.user.clinicId);
 
@@ -90,24 +98,30 @@ router.post('/', auth, async (req, res) => {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
+    // ✅ FIX 1: doctorName fallback — never let it be empty string (schema required: true)
+    const doctorName = (req.user.name || '').trim() || 'Doctor';
+
+    // ✅ FIX 2: date fallback — patient.date may be undefined, causing required field 500
+    const prescriptionDate = patient.date || getTodayIST();
+
     const prescription = await Prescription.create({
       clinicId,
       doctorId,
       patientId:        patientObjId,
-      doctorName:       req.user.name       || '',
-      doctorSpecialist: req.user.specialist  || '',
-      patientName:      patient.name         || '',
-      patientAge:       patient.age          || '',
-      patientGender:    patient.gender       || '',
-      patientPhone:     patient.phone        || '',
-      clinicName:       clinic?.name         || '',
-      date:             patient.date,
-      tokenNumber:      patient.token        || 0,
-      diagnosis:        diagnosis            || '',
+      doctorName,                                          // ✅ FIXED
+      doctorSpecialist: (req.user.specialist || '').trim(),
+      patientName:      (patient.name   || '').trim() || 'Patient',
+      patientAge:       patient.age      || '',
+      patientGender:    patient.gender   || '',
+      patientPhone:     patient.phone    || '',
+      clinicName:       clinic?.name     || '',
+      date:             prescriptionDate,                  // ✅ FIXED
+      tokenNumber:      patient.token    || 0,
+      diagnosis:        diagnosis        || '',
       medicines:        Array.isArray(medicines) ? medicines : [],
       tests:            Array.isArray(tests)     ? tests     : [],
-      notes:            notes                    || '',
-      followUpDate:     followUpDate             || '',
+      notes:            notes            || '',
+      followUpDate:     followUpDate     || '',
     });
 
     // Auto-save medicine & test names to doctor's personal dictionary
@@ -121,6 +135,11 @@ router.post('/', auth, async (req, res) => {
     return res.status(201).json({ success: true, prescription });
   } catch (err) {
     console.error('Create prescription error:', err);
+    // ✅ FIX 3: return detailed validation errors so frontend shows real cause
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map((e) => e.message).join(', ');
+      return res.status(400).json({ message: `Validation failed: ${messages}` });
+    }
     res.status(500).json({ message: err.message });
   }
 });
@@ -131,7 +150,7 @@ router.post('/', auth, async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/patient/:patientId', auth, async (req, res) => {
   try {
-    const clinicId = toObjectId(req.user.clinicId);
+    const clinicId  = toObjectId(req.user.clinicId);
     const patientId = toObjectId(req.params.patientId);
 
     if (!patientId) return res.json({ success: true, prescriptions: [] });
@@ -153,10 +172,7 @@ router.get('/patient/:patientId', auth, async (req, res) => {
 router.get('/today', auth, async (req, res) => {
   try {
     const clinicId = toObjectId(req.user.clinicId);
-
-    const now     = new Date();
-    const istDate = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
-    const today   = istDate.toISOString().split('T')[0];
+    const today    = getTodayIST();
 
     const prescriptions = await Prescription.find({ clinicId, date: today })
       .sort({ createdAt: -1 })
@@ -212,8 +228,8 @@ router.put('/:id', auth, async (req, res) => {
           diagnosis:    diagnosis   || '',
           medicines:    Array.isArray(medicines) ? medicines : [],
           tests:        Array.isArray(tests)     ? tests     : [],
-          notes:        notes                    || '',
-          followUpDate: followUpDate             || '',
+          notes:        notes        || '',
+          followUpDate: followUpDate || '',
         },
       },
       { new: true }

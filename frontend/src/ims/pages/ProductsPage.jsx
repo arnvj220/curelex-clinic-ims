@@ -2,31 +2,45 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import DataTable from "../components/common/DataTable";
 import usePermissions from "../hooks/usePermissions";
-import { createProduct, fetchProducts, getProductBarcode, getProductQr } from "../services/productService";
+import {
+  createProduct,
+  fetchProducts,
+  getProductBarcode,
+  getProductQr,
+} from "../services/productService";
 import { currency } from "../utils/format";
 
+// ✅ FIXED: form now has proper fields — sku is a product CODE, mrpPrice is a number
 const initialForm = {
-  name: "",
-  sku: "",
-  costPrice: "",
-  price: "",
-  description: ""
+  name:        "",
+  sku:         "",   // Product code string e.g. "MED-001", "PARA-500"
+  mrpPrice:    "",   // MRP Price (₹)
+  costPrice:   "",   // Purchase Price (₹)
+  price:       "",   // Selling Price (₹)
+  description: "",
 };
 
+// ✅ FIXED: correct labels for each field
 const fieldLabels = {
   name:        "Product Name",
-  sku:         "MRP Price",
+  sku:         "SKU / Product Code (e.g. MED-001)",
+  mrpPrice:    "MRP Price",
   costPrice:   "Purchase Price",
   price:       "Selling Price",
-  description: "Description (optional)"
+  description: "Description (optional)",
 };
+
+// Fields that should render as number inputs
+const numberFields = new Set(["mrpPrice", "costPrice", "price"]);
 
 const ProductsPage = () => {
   const { canWriteProducts } = usePermissions();
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState(initialForm);
-  const [qrModal, setQrModal] = useState(null);
+  const [form, setForm]         = useState(initialForm);
+  const [loading, setLoading]   = useState(false);
+  const [qrModal, setQrModal]   = useState(null);
 
+  // ── Load products ──────────────────────────────────────────────
   const loadProducts = async () => {
     try {
       const data = await fetchProducts();
@@ -38,23 +52,38 @@ const ProductsPage = () => {
 
   useEffect(() => { loadProducts(); }, []);
 
+  // ── Create product ─────────────────────────────────────────────
   const onCreate = async (event) => {
     event.preventDefault();
+
+    // Basic client-side guard: SKU must not be purely numeric
+    if (/^\d+$/.test(form.sku.trim())) {
+      toast.error("SKU should be a product code like MED-001, not just a number.");
+      return;
+    }
+
+    setLoading(true);
     try {
       await createProduct({
-        ...form,
-        category:  "General",
-        price:     Number(form.price),
-        costPrice: Number(form.costPrice)
+        name:        form.name.trim(),
+        sku:         form.sku.trim(),
+        mrpPrice:    Number(form.mrpPrice),
+        costPrice:   Number(form.costPrice),
+        price:       Number(form.price),
+        description: form.description.trim(),
+        category:    "General",
       });
-      toast.success("Product created");
+      toast.success("Product created successfully!");
       setForm(initialForm);
       await loadProducts();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to create product");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ── QR / Barcode modals ────────────────────────────────────────
   const openQr = async (product) => {
     try {
       const data = await getProductQr(product._id);
@@ -73,9 +102,11 @@ const ProductsPage = () => {
     }
   };
 
+  // ── Table columns ──────────────────────────────────────────────
   const columns = [
     { key: "name",      label: "Name" },
-    { key: "sku",       label: "MRP Price",       render: (row) => currency(row.sku) },
+    { key: "sku",       label: "SKU",            render: (row) => row.sku },
+    { key: "mrpPrice",  label: "MRP Price",       render: (row) => currency(row.mrpPrice) },
     { key: "costPrice", label: "Purchase Price",   render: (row) => currency(row.costPrice) },
     { key: "price",     label: "Selling Price",    render: (row) => currency(row.price) },
     { key: "quantity",  label: "Quantity",         render: (row) => row.inventory?.quantity ?? 0 },
@@ -97,12 +128,15 @@ const ProductsPage = () => {
             Barcode
           </button>
         </div>
-      )
-    }
+      ),
+    },
   ];
 
+  // ── Render ─────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
+
+      {/* QR / Barcode modal */}
       {qrModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -126,6 +160,7 @@ const ProductsPage = () => {
         </div>
       )}
 
+      {/* Add product form */}
       {canWriteProducts && (
         <form
           onSubmit={onCreate}
@@ -137,16 +172,22 @@ const ProductsPage = () => {
               placeholder={fieldLabels[field]}
               className="rounded-lg border border-brand-100 px-3 py-2 text-sm"
               value={form[field]}
-              type={["price", "costPrice", "sku"].includes(field) ? "number" : "text"}
-              onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
+              // ✅ FIXED: only price fields are type="number"; sku is type="text"
+              type={numberFields.has(field) ? "number" : "text"}
+              min={numberFields.has(field) ? "0" : undefined}
+              step={numberFields.has(field) ? "0.01" : undefined}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, [field]: e.target.value }))
+              }
               required={field !== "description"}
             />
           ))}
           <button
             type="submit"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white md:col-span-3"
+            disabled={loading}
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white md:col-span-3 disabled:opacity-60"
           >
-            Add product
+            {loading ? "Adding…" : "Add product"}
           </button>
         </form>
       )}
