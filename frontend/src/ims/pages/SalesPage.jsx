@@ -26,12 +26,47 @@ const SalesPage = () => {
   const [discountValue, setDiscountValue] = useState("0");
   const [items, setItems] = useState([{ ...EMPTY_ITEM }]);
 
-  const getProduct    = (id) => products.find((p) => p._id === id) || null;
+  const getProduct = (id) => products.find((p) => p._id === id) || null;
+
+  // ✅ Get available stock for a product
+  const getStock = (id) => {
+    const p = getProduct(id);
+    return p ? (p.inventory?.quantity ?? 0) : 0;
+  };
+
   const addItemRow    = () => setItems((prev) => [...prev, { ...EMPTY_ITEM }]);
   const removeItemRow = (idx) =>
     setItems((prev) => prev.length === 1 ? prev : prev.filter((_, i) => i !== idx));
-  const updateItem    = (idx, field, value) =>
-    setItems((prev) => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+
+  const updateItem = (idx, field, value) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== idx) return it;
+        const updated = { ...it, [field]: value };
+
+        // ✅ If quantity changed, clamp it to available stock
+        if (field === "quantity") {
+          const stock = getStock(updated.productId);
+          const qty   = Number(value);
+          if (stock === 0) {
+            toast.error(`"${getProduct(updated.productId)?.name}" has 0 stock available.`);
+            return { ...it, quantity: "" }; // block entry
+          }
+          if (qty > stock) {
+            toast.error(`Only ${stock} units available for "${getProduct(updated.productId)?.name}"`);
+            return { ...it, quantity: String(stock) }; // clamp to max
+          }
+        }
+
+        // ✅ If product changed, reset quantity
+        if (field === "productId") {
+          updated.quantity = "";
+        }
+
+        return updated;
+      })
+    );
+  };
 
   const handleDiscountTypeChange = (e) => {
     setDiscountType(e.target.value);
@@ -77,6 +112,17 @@ const SalesPage = () => {
       toast.error("Add at least one item with product and quantity");
       return;
     }
+
+    // ✅ Final stock check before submitting
+    for (const it of validItems) {
+      const stock = getStock(it.productId);
+      const name  = getProduct(it.productId)?.name || "Product";
+      if (Number(it.quantity) > stock) {
+        toast.error(`Insufficient stock for "${name}". Available: ${stock}`);
+        return;
+      }
+    }
+
     try {
       await createSale({
         customerId:     customerId || undefined,
@@ -235,9 +281,8 @@ const SalesPage = () => {
           />
         </div>
 
-        {/* ── Row 2: Payment + Discount type + Discount value — all 3 in one row ── */}
+        {/* ── Row 2: Payment + Discount type + Discount value ── */}
         <div className="grid gap-3 md:grid-cols-3">
-          {/* Payment */}
           <select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
@@ -249,7 +294,6 @@ const SalesPage = () => {
             <option>Credit</option>
           </select>
 
-          {/* Discount TYPE — takes up 1 column */}
           <select
             value={discountType}
             onChange={handleDiscountTypeChange}
@@ -259,7 +303,6 @@ const SalesPage = () => {
             <option value="rupees">Discount ₹</option>
           </select>
 
-          {/* Discount VALUE — same row, right next to type */}
           <div className="relative">
             <input
               placeholder={discountType === "percent" ? "e.g. 10" : "e.g. 5"}
@@ -290,9 +333,12 @@ const SalesPage = () => {
               const prod    = getProduct(it.productId);
               const qty     = Number(it.quantity) || 0;
               const lineAmt = prod ? Number(prod.price) * qty : 0;
+              const stock   = getStock(it.productId); // ✅ available stock
+              const noStock = it.productId && stock === 0;
+              const lowStock = it.productId && stock > 0 && stock <= 5;
 
               return (
-                <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-2 items-center px-3 py-2">
+                <div key={idx} className="grid grid-cols-[2fr_1fr_auto] gap-2 items-start px-3 py-2">
                   <div>
                     <select
                       value={it.productId}
@@ -306,6 +352,22 @@ const SalesPage = () => {
                         </option>
                       ))}
                     </select>
+
+                    {/* ✅ Stock availability badge shown right below product dropdown */}
+                    {it.productId && (
+                      <p className={`mt-1 text-xs font-medium ${
+                        noStock   ? "text-red-500" :
+                        lowStock  ? "text-orange-500" :
+                                    "text-green-600"
+                      }`}>
+                        {noStock
+                          ? "❌ Out of stock"
+                          : lowStock
+                            ? `⚠️ Low stock: ${stock} left`
+                            : `✅ Available: ${stock}`}
+                      </p>
+                    )}
+
                     {prod && qty > 0 && (
                       <p className="mt-0.5 text-xs text-slate-400">
                         {currency(prod.price)} × {qty} = <span className="font-medium text-slate-600">{currency(lineAmt)}</span>
@@ -313,18 +375,32 @@ const SalesPage = () => {
                     )}
                   </div>
 
-                  <input
-                    type="number" min="1" placeholder="Qty"
-                    value={it.quantity}
-                    onChange={(e) => updateItem(idx, "quantity", e.target.value)}
-                    className="rounded-lg border border-brand-100 px-2 py-1.5 text-sm w-full"
-                  />
+                  <div>
+                    <input
+                      type="number"
+                      min="1"
+                      max={stock || undefined}
+                      placeholder="Qty"
+                      value={it.quantity}
+                      disabled={noStock} // ✅ disable qty if no stock
+                      onChange={(e) => updateItem(idx, "quantity", e.target.value)}
+                      className={`rounded-lg border px-2 py-1.5 text-sm w-full ${
+                        noStock
+                          ? "border-red-200 bg-red-50 text-red-400 cursor-not-allowed"
+                          : "border-brand-100"
+                      }`}
+                    />
+                    {/* ✅ Show max hint */}
+                    {it.productId && !noStock && (
+                      <p className="mt-1 text-xs text-slate-400">Max: {stock}</p>
+                    )}
+                  </div>
 
                   <button
                     type="button"
                     onClick={() => removeItemRow(idx)}
                     disabled={items.length === 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20 disabled:cursor-not-allowed"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-20 disabled:cursor-not-allowed mt-0.5"
                   >✕</button>
                 </div>
               );
