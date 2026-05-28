@@ -34,9 +34,9 @@ const createSale = async ({
     const product = await Product.findOne({ _id: item.productId, clinicId });
     if (!product) throw new Error("Product not found");
 
-    const qty       = Number(item.quantity);
-    const unitPrice = Number(product.price);
-    const lineTotal = parseFloat((qty * unitPrice).toFixed(2));
+    const qty        = Number(item.quantity);
+    const unitPrice  = Number(product.price);
+    const lineAmount = parseFloat((qty * unitPrice).toFixed(2));
 
     saleItems.push({
       product:    product._id,
@@ -45,14 +45,16 @@ const createSale = async ({
       quantity:   qty,
       unitPrice:  unitPrice,
       gstRate:    0,
-      lineTotal:  lineTotal,
+      lineTax:    0,        // ✅ required by model
+      lineAmount: lineAmount, // ✅ required by model
+      lineTotal:  lineAmount,
       taxAmount:  0,
-      finalPrice: lineTotal,
+      finalPrice: lineAmount,
     });
   }
 
   // ── Totals (no GST) ───────────────────────────────────────────
-  const subtotal    = parseFloat(saleItems.reduce((s, i) => s + i.lineTotal, 0).toFixed(2));
+  const subtotal    = parseFloat(saleItems.reduce((s, i) => s + i.lineAmount, 0).toFixed(2));
   const discount    = parseFloat(Number(discountAmount || 0).toFixed(2));
   const finalAmount = parseFloat((subtotal - discount).toFixed(2));
   const totals = {
