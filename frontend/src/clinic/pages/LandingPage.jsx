@@ -708,13 +708,30 @@ export default function LandingPage() {
     }
   
     if (!isValidEmail(form.email)) {
-      setErr(
-        'Please enter a valid email address.'
-      );
-      return;
-    }
-  
-    setLoading(true);
+  setErr('Please enter a valid email address.');
+  return;
+}
+
+// ADD THIS
+if (form.password.length < 6) {
+  setErr('Password must be at least 6 characters.');
+  return;
+}
+if (!/[A-Z]/.test(form.password)) {
+  setErr('Password must contain at least 1 uppercase letter.');
+  return;
+}
+if (!/[0-9]/.test(form.password)) {
+  setErr('Password must contain at least 1 digit.');
+  return;
+}
+if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password)) {
+  setErr('Password must contain at least 1 special character.');
+  return;
+}
+// END ADD
+
+setLoading(true);
   
     try {
       const data =
@@ -1636,7 +1653,15 @@ export default function LandingPage() {
             )}
 
             {/* Password */}
-            <FieldInput S={S} label="Password *" type="password" value={form.password} onChange={e => f('password', e.target.value)} placeholder="Min. 6 characters" disabled={loading} />
+            <FieldInput 
+  S={S} 
+  label="Password *" 
+  type="password" 
+  value={form.password} 
+  onChange={e => f('password', e.target.value)} 
+  placeholder="Min 6 chars, 1 uppercase, 1 digit, 1 special" 
+  disabled={loading} 
+/>
 
             {err && <div style={S.alertError}><IcoAlert /> <span>{err}</span></div>}
 
