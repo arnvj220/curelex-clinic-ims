@@ -60,9 +60,9 @@ router.post('/', auth, async (req, res) => {
     if (!['doctor', 'receptionist', 'pharmacist'].includes(role))
       return res.status(400).json({ message: 'Invalid role.' });
 
-    const exists = await User.findOne({ clinicId: req.user.clinicId, email: email.toLowerCase() });
-    if (exists)
-      return res.status(400).json({ message: 'This email is already in use.' });
+    const exists = await User.findOne({ email: email.toLowerCase() });
+if (exists)
+  return res.status(400).json({ message: 'This email is already registered in the system. Please use a different email.' });
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
