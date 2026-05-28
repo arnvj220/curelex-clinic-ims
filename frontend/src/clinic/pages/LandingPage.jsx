@@ -867,13 +867,13 @@ setLoading(true);
 
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_CLINIC_API_URL}/contact`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, message }),
-      }
-    );
+  'https://www.curelex.in/api/clinic/contact',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, phone, message }),
+  }
+);
 
     const data = await response.json();
 
