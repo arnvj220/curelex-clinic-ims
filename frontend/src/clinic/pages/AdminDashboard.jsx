@@ -969,7 +969,62 @@ const SPECIALISTS = [
   'Gynecologist','Neurologist','Orthopedic','Pediatrician','Psychiatrist',
   'Urologist','Dentist','Eye Specialist','Diabetologist','Chest Specialist',
 ];
+function EmailInputWithCheck({ label, value, onChange, placeholder, setErr }) {
+  const [checking, setChecking] = useState(false);
+  const [emailErr, setEmailErr] = useState('');
 
+  async function handleBlur(e) {
+    const email = e.target.value.trim();
+    setEmailErr('');
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
+    setChecking(true);
+    try {
+      const token = localStorage.getItem('clinic_token') || '';
+      const res = await fetch(
+        `${import.meta.env.VITE_CLINIC_API_URL}/users/check-email?email=${encodeURIComponent(email)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (data.exists) {
+        setEmailErr('This email is already registered. Please use a different email.');
+        setErr('This email is already registered. Please use a different email.');
+      } else {
+        setErr('');
+      }
+    } catch {}
+    finally { setChecking(false); }
+  }
+
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#4a6278', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: 0.4 }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type="email"
+          value={value}
+          onChange={onChange}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          style={{
+            width: '100%', padding: '9px 12px', borderRadius: 9,
+            border: `1.5px solid ${emailErr ? '#e74c3c' : '#d0dce8'}`,
+            fontSize: 13, fontFamily: 'inherit', outline: 'none',
+            color: '#0a3d62', background: '#fff', boxSizing: 'border-box',
+            paddingRight: checking ? 36 : 12,
+          }}
+        />
+        {checking && (
+          <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#1565a8' }}>⏳</span>
+        )}
+      </div>
+      {emailErr && (
+        <div style={{ fontSize: 11.5, color: '#e74c3c', marginTop: 4, fontWeight: 600 }}>
+          ⚠️ {emailErr}
+        </div>
+      )}
+    </div>
+  );
+}
 function DoctorManagement({ doctors, patients, onAdd, onDelete, onUpdateTokenLimit, onUpdateDoctor, activePlan, reload }) {
   const [show, setShow] = useState(false);
   const [detailDoc, setDetailDoc] = useState(null);
@@ -1124,13 +1179,13 @@ setErr('');
             </div>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Input 
-                label="Login Email *" 
-                type="email" 
-                value={form.email} 
-                onChange={(e) => f('email', e.target.value)} 
-                placeholder="doctor@clinic.com" 
-              />
+              <EmailInputWithCheck
+  label="Login Email *"
+  value={form.email}
+  onChange={(e) => f('email', e.target.value)}
+  placeholder="doctor@clinic.com"
+  setErr={setErr}
+/>
               <Input 
                 label="Password *" 
                 type="password" 
@@ -1342,13 +1397,13 @@ setErr('');
             />
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Input 
-                label="Login Email *" 
-                type="email" 
-                value={form.email} 
-                onChange={(e) => f('email', e.target.value)} 
-                placeholder="rec@clinic.com" 
-              />
+              <EmailInputWithCheck
+  label="Login Email *"
+  value={form.email}
+  onChange={(e) => f('email', e.target.value)}
+  placeholder="rec@clinic.com"
+  setErr={setErr}
+/>
               <Input 
                 label="Password *" 
                 type="password" 
@@ -1461,7 +1516,13 @@ setErr('');
             </div>
             <Input label="Full Name *" value={form.name} onChange={(e) => f('name', e.target.value)} placeholder="e.g. Ahmed Pharmacy" />
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Input label="Login Email *" type="email" value={form.email} onChange={(e) => f('email', e.target.value)} placeholder="pharmacy@clinic.com" />
+              <EmailInputWithCheck
+  label="Login Email *"
+  value={form.email}
+  onChange={(e) => f('email', e.target.value)}
+  placeholder="pharmacy@clinic.com"
+  setErr={setErr}
+/>
               <Input label="Password *" type="password" value={form.password} onChange={(e) => f('password', e.target.value)} placeholder="••••••" />
             </div>
             <Input 

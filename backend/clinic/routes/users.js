@@ -34,6 +34,18 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// ── GET /api/users/check-email — check if email already exists ────────────────
+router.get('/check-email', auth, async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) return res.json({ exists: false });
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    res.json({ exists: !!exists });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── GET /api/users/me  — fetch own user record ──
 router.get('/me', auth, async (req, res) => {
   try {
@@ -56,13 +68,12 @@ router.post('/', auth, async (req, res) => {
     if (!name || !email || !password || !role)
       return res.status(400).json({ message: 'Fill all required fields.' });
 
-    // ✅ FIX: added 'pharmacist' to allowed roles
     if (!['doctor', 'receptionist', 'pharmacist'].includes(role))
       return res.status(400).json({ message: 'Invalid role.' });
 
     const exists = await User.findOne({ email: email.toLowerCase() });
-if (exists)
-  return res.status(400).json({ message: 'This email is already registered in the system. Please use a different email.' });
+    if (exists)
+      return res.status(400).json({ message: 'This email is already registered in the system. Please use a different email.' });
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({
@@ -155,55 +166,35 @@ router.patch('/:id', auth, async (req, res) => {
     if (!user)
       return res.status(404).json({ message: 'User not found.' });
 
-    const {
-      name,
-      email,
-      password,
-      phone,
-      specialist,
-      fee,
-      role,
-      schedule,
-    } = req.body;
+    const { name, email, password, phone, specialist, fee, role, schedule } = req.body;
 
-    // prevent invalid role updates
-    if (
-      role &&
-      !['doctor', 'receptionist', 'pharmacist'].includes(role)
-    ) {
+    if (role && !['doctor', 'receptionist', 'pharmacist'].includes(role)) {
       return res.status(400).json({ message: 'Invalid role.' });
     }
 
-    // check duplicate email
     if (email && email.toLowerCase() !== user.email) {
       const exists = await User.findOne({
-        clinicId: req.user.clinicId,
         email: email.toLowerCase(),
         _id: { $ne: user._id },
       });
-
       if (exists) {
         return res.status(400).json({
-          message: 'This email is already in use.',
+          message: 'This email is already registered in the system. Please use a different email.',
         });
       }
-
       user.email = email.toLowerCase();
     }
 
-    // update fields
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;
     if (specialist !== undefined) user.specialist = specialist;
     if (fee !== undefined) user.fee = fee;
     if (role !== undefined) user.role = role;
 
-    // update schedule
     if (schedule !== undefined) {
       user.schedule = sanitiseSchedule(schedule);
     }
 
-    // update password only if provided
     if (password && password.trim() !== '') {
       user.password = await bcrypt.hash(password, 10);
     }
@@ -211,7 +202,6 @@ router.patch('/:id', auth, async (req, res) => {
     await user.save();
 
     const { password: _, ...safe } = user.toObject();
-
     res.json(safe);
   } catch (err) {
     res.status(500).json({ message: err.message });
