@@ -3,13 +3,12 @@ import Product from "../models/Product.js";
 import Customer from "../models/Customer.js";
 import Sale from "../models/Sale.js";
 import { buildInvoiceNumber } from "../utils/invoiceNumber.js";
-import { calculateLine, calculateTotals } from "../utils/gst.js";
 import { changeStock } from "./inventoryService.js";
 
-// ── FIXED: per-clinic invoice counter ────────────────────────────
+// ── Per-clinic invoice counter ────────────────────────────────────
 const nextInvoiceNumber = async (clinicId) => {
   const year = new Date().getFullYear();
-  const key  = `invoice:${year}:${clinicId}`; // ← unique per clinic per year
+  const key  = `invoice:${year}:${clinicId}`;
   const counter = await Counter.findOneAndUpdate(
     { key },
     { $inc: { seq: 1 } },
@@ -19,7 +18,7 @@ const nextInvoiceNumber = async (clinicId) => {
 };
 
 const createSale = async ({
-  clinicId,       // ← ADDED
+  clinicId,
   customerId,
   walkInName,
   items,
@@ -32,32 +31,39 @@ const createSale = async ({
 
   const saleItems = [];
   for (const item of items) {
-    // ← ADDED clinicId filter so clinic A can't sell clinic B's products
     const product = await Product.findOne({ _id: item.productId, clinicId });
     if (!product) throw new Error("Product not found");
 
-    const lineCalc = calculateLine({
-      quantity:  item.quantity,
-      unitPrice: product.price,
-      gstRate:   product.gstRate,
-    });
+    const qty       = Number(item.quantity);
+    const unitPrice = Number(product.price);
+    const lineTotal = parseFloat((qty * unitPrice).toFixed(2));
 
     saleItems.push({
-      product:   product._id,
-      name:      product.name,
-      sku:       product.sku,
-      quantity:  Number(item.quantity),
-      unitPrice: product.price,
-      gstRate:   product.gstRate,
-      ...lineCalc,
+      product:    product._id,
+      name:       product.name,
+      sku:        product.sku,
+      quantity:   qty,
+      unitPrice:  unitPrice,
+      gstRate:    0,
+      lineTotal:  lineTotal,
+      taxAmount:  0,
+      finalPrice: lineTotal,
     });
   }
 
-  const totals = calculateTotals({ items: saleItems, discountAmount });
+  // ── Totals (no GST) ───────────────────────────────────────────
+  const subtotal    = parseFloat(saleItems.reduce((s, i) => s + i.lineTotal, 0).toFixed(2));
+  const discount    = parseFloat(Number(discountAmount || 0).toFixed(2));
+  const finalAmount = parseFloat((subtotal - discount).toFixed(2));
+  const totals = {
+    subtotal,
+    totalTax:      0,
+    totalDiscount: discount,
+    finalAmount,
+  };
 
   let customer = null;
   if (customerId) {
-    // ← ADDED clinicId filter so clinic A can't bill clinic B's customers
     customer = await Customer.findOne({ _id: customerId, clinicId });
     if (!customer) throw new Error("Customer not found");
   }
@@ -69,8 +75,8 @@ const createSale = async ({
   }
 
   const sale = await Sale.create({
-    clinicId,                                             // ← ADDED
-    invoiceNo:      await nextInvoiceNumber(clinicId),    // ← FIXED: per-clinic
+    clinicId,
+    invoiceNo:      await nextInvoiceNumber(clinicId),
     customer:       customer ? customer._id : undefined,
     walkInName:     (!customer && walkInName) ? walkInName.trim() : "",
     items:          saleItems,
@@ -93,7 +99,7 @@ const finalizeSale = async ({ saleId, userId }) => {
 
   for (const item of sale.items) {
     await changeStock({
-      clinicId:       sale.clinicId,        // ← ADDED
+      clinicId:       sale.clinicId,
       productId:      item.product,
       quantityChange: -Number(item.quantity),
       movementType:   "sale",
