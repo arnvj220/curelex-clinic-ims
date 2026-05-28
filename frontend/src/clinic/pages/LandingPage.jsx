@@ -30,62 +30,27 @@ const isValidPhone = (phone) => {
 async function fetchPincodeData(pincode) {
   try {
     const res = await fetch(
-      `${import.meta.env.VITE_CLINIC_API_URL}/pincode/${pincode}`
+      `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
     );
-
     const json = await res.json();
-    if (
-      !json ||
-      !json[0] ||
-      json[0].Status !== "Success"
-    ) {
-      return null;
-    }
+    if (!json || json.length === 0) return null;
 
-    const postOffices =
-      json[0].PostOffice;
-
-    if (
-      !postOffices ||
-      postOffices.length === 0
-    ) {
-      return null;
-    }
-
-    const first = postOffices[0];
-
-    const cities = [
-      ...new Set(
-        postOffices.map((p) => p.Name)
-      ),
-    ];
-
-    const subDistricts = [
-      ...new Set(
-        postOffices
-          .map((p) => p.Block)
-          .filter(
-            (block) =>
-              block &&
-              block !== "NA"
-          )
-      ),
-    ];
+    const address = json[0].address;
+    const state = address.state || '';
+    const district = address.state_district || address.county || '';
+    const city = address.city || address.town || address.village || address.suburb || '';
+    const subDistrict = address.suburb || address.county || '';
 
     return {
-      state: first.State,
-      district: first.District,
-      subDistrict:
-        subDistricts[0] || "",
-      allSubDistricts:
-        subDistricts,
-      cities,
+      state,
+      district,
+      subDistrict,
+      allSubDistricts: subDistrict ? [subDistrict] : [],
+      cities: city ? [city] : [],
     };
   } catch (err) {
-    console.error(
-      "Pincode fetch error:",
-      err
-    );
+    console.error('Pincode fetch error:', err);
     return null;
   }
 }
@@ -666,7 +631,6 @@ function ServiceCard({ icon, title, desc, iconBg, delay = 0 }) {
         <div className="sc-icon" style={{ width: 52, height: 52, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, marginBottom: 16, background: iconBg, transition: 'background .3s' }}>{icon}</div>
         <div className="sc-title" style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 8, transition: 'color .3s' }}>{title}</div>
         <div className="sc-desc" style={{ fontSize: 13.5, color: 'var(--muted)', lineHeight: 1.6, transition: 'color .3s' }}>{desc}</div>
-        <span className="sc-arrow" style={{ color: 'var(--light)', fontSize: 16, marginTop: 16 }}>→</span>
       </div>
     </div>
   );
@@ -999,8 +963,8 @@ export default function LandingPage() {
         <a href="#home" onClick={e => { e.preventDefault(); scrollToSection('home'); }} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
         <div
   style={{
-    width: mob ? 110 : 150,
-    height: mob ? 110 : 150,
+    width: mob ? 160 : 220,
+    height: mob ? 160 : 220,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -1465,17 +1429,25 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Platform</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[['Sign Up Free', () => setSignupOpen(true)], ['Sign In', () => setSigninOpen(true)], ['Book a Demo', null], ['API Docs', null], ['Changelog', null]].map(([label, handler]) => (
-                  <button key={label} onClick={handler || undefined} style={{ color: 'rgba(255,255,255,.65)', fontSize: 13.5, background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", textAlign: 'left', padding: 0, transition: 'color .2s' }}
-                    onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                    onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.65)'}
-                  >{label}</button>
-                ))}
-              </div>
-            </div>
-
+  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 16 }}>Platform</div>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    {[
+      ['Sign Up Free', () => { setMode('register'); setErr(''); }],
+      ['Sign In',      () => { setMode('login');    setErr(''); }],
+      ['Book a Demo',  () => scrollToSection('contact')],
+      ['API Docs',     null],
+      ['Changelog',    null],
+    ].map(([label, handler]) => (
+      <button
+        key={label}
+        onClick={handler || undefined}
+        style={{ color: 'rgba(255,255,255,.65)', fontSize: 13.5, background: 'none', border: 'none', cursor: handler ? 'pointer' : 'default', fontFamily: "'DM Sans', sans-serif", textAlign: 'left', padding: 0, transition: 'color .2s' }}
+        onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+        onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,.65)'}
+      >{label}</button>
+    ))}
+  </div>
+</div>
 
           </div>
 
