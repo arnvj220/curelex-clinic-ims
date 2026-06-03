@@ -1307,14 +1307,13 @@ setLoading(true);
         <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />
         About Curelex
       </div>
-      <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(28px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 14 }}>
+      <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 'clamp(26px,4vw,42px)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, letterSpacing: -1, marginBottom: 14 }}>
         Bridging the Rural‑Urban Healthcare Gap
       </h2>
-      <p style={{ fontSize: 16, color: 'var(--muted)', maxWidth: 640, margin: '0 auto', lineHeight: 1.75, fontWeight: 300 }}>
-        Curelex is a next-generation hybrid e-clinic delivering super-speciality healthcare,
-        telemedicine, diagnostics, and pharmacy support to rural and semi-urban communities
-        through a zero-invasive OPD-based system — making expert medical care accessible,
-        safe, and affordable.
+      <p style={{ fontSize: 'clamp(14px,1.6vw,16px)', color: 'var(--muted)', maxWidth: 640, margin: '0 auto', lineHeight: 1.75, fontWeight: 300 }}>
+        Curelex is a comprehensive healthcare management platform that streamlines clinic operations
+        through intelligent patient management, EMR, queue management, diagnostics, pharmacy
+        integration, and digital healthcare workflows — making expert care accessible, safe, and affordable.
       </p>
     </div>
 
@@ -1325,6 +1324,7 @@ setLoading(true);
       gap: 20,
       marginBottom: 52,
     }}>
+
       {/* Image 1 — clinic photo */}
       <div style={{
         borderRadius: 18,
@@ -1333,6 +1333,7 @@ setLoading(true);
         border: '1px solid var(--border)',
         position: 'relative',
         aspectRatio: '16/9',
+        minHeight: mob ? 200 : 'auto',
       }}>
         <img
           src="https://customer-assets.emergentagent.com/job_6e68eb4a-87bb-42e9-9164-dba3203a7aaf/artifacts/kpuz7ysv_WhatsApp1.jpeg"
@@ -1341,50 +1342,34 @@ setLoading(true);
         />
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'linear-gradient(to top, rgba(10,61,98,0.75) 0%, transparent 100%)',
-          padding: '20px 18px 16px',
+          background: 'linear-gradient(to top, rgba(10,61,98,0.78) 0%, transparent 100%)',
+          padding: mob ? '16px 14px 14px' : '20px 18px 16px',
         }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>Our E-Clinic in Action</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 }}>Telemedicine reaching rural communities</div>
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: mob ? 13 : 14 }}>Our E-Clinic in Action</div>
+          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: mob ? 11 : 12, marginTop: 2 }}>Telemedicine reaching rural communities</div>
         </div>
       </div>
 
       {/* Image 2 — team / outreach */}
-      <div style={{
-        borderRadius: 18,
-        overflow: 'hidden',
-        boxShadow: '0 16px 50px rgba(10,61,98,0.13)',
-        border: '1px solid var(--border)',
-        position: 'relative',
-        aspectRatio: '16/9',
-        background: 'linear-gradient(135deg, #0a3d62 0%, #00b894 100%)',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        padding: 28,
-      }}>
-        {/* Stats grid shown inside second "image" card */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(10,61,98,0.97), rgba(0,184,148,0.92))' }} />
-        <div style={{ position: 'relative', zIndex: 1, width: '100%' }}>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center', marginBottom: 18 }}>Our Impact So Far</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            {[
-              ['500+', 'Clinics Onboarded'],
-              ['2M+', 'Patients Served'],
-              ['40%', 'Less Wait Time'],
-              ['99.9%', 'Uptime SLA'],
-            ].map(([num, label]) => (
-              <div key={label} style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                borderRadius: 12, padding: '16px 12px', textAlign: 'center',
-              }}>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{num}</div>
-                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+<div
+  style={{
+    borderRadius: 18,
+    overflow: 'hidden',
+    boxShadow: '0 16px 50px rgba(10,61,98,0.13)',
+    border: '1px solid var(--border)',
+    aspectRatio: '16/9',
+  }}
+>
+  <img
+    src="/about_img_2.png"  // replace with your image path or URL
+    alt="Team / Outreach"
+    style={{
+      width: '100%',
+      height: '100%',
+      display: 'block',
+    }}
+  />
+</div>
     </div>
 
     {/* ── Features / benefits row ── */}
@@ -1394,63 +1379,55 @@ setLoading(true);
       gap: 28,
       alignItems: 'start',
     }}>
-      {/* Left — what makes Curelex unique */}
+
+      {/* Left — feature list */}
       <div className="reveal">
         <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: mob ? 20 : 24, fontWeight: 800, color: 'var(--text)', marginBottom: 18, lineHeight: 1.2 }}>
           Built for the Future of Healthcare
         </h3>
-        <p style={{ fontSize: 14.5, color: 'var(--muted)', lineHeight: 1.75, marginBottom: 22, fontWeight: 300 }}>
+        <p style={{ fontSize: mob ? 13.5 : 14.5, color: 'var(--muted)', lineHeight: 1.75, marginBottom: 22, fontWeight: 300 }}>
           Curelex empowers doctors, receptionists, and administrators to deliver
           world-class patient experiences effortlessly — whether in a metro hospital
           or a remote village clinic.
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
-  {
-    icon: '🏥',
-    bg: 'rgba(0,184,148,.1)',
-    title: 'Smart Clinic Management',
-    desc: 'End-to-end clinic operations management including patient registration, appointments, billing, and staff coordination from a unified dashboard.',
-  },
-  {
-    icon: '⏳',
-    bg: 'rgba(21,101,168,.1)',
-    title: 'Queue Management System',
-    desc: 'Reduce patient waiting times with real-time token generation, queue tracking, and automated patient notifications.',
-  },
-  {
-    icon: '📋',
-    bg: 'rgba(108,92,231,.1)',
-    title: 'Electronic Medical Records (EMR)',
-    desc: 'Securely maintain patient histories, prescriptions, diagnoses, and treatment records for quick access and better continuity of care.',
-  },
-  {
-    icon: '💊',
-    bg: 'rgba(253,203,110,.12)',
-    title: 'Integrated Pharmacy & Diagnostics',
-    desc: 'Manage prescriptions, laboratory investigations, diagnostic reports, and medicine dispensing through a single connected platform.',
-  },
-].map(({ icon, bg, title, desc }) => (
+            { icon: '🏥', bg: 'rgba(0,184,148,.1)',    title: 'Smart Clinic Management',         desc: 'End-to-end clinic operations including patient registration, appointments, billing, and staff coordination from a unified dashboard.' },
+            { icon: '🏨', bg: 'rgba(255,118,117,.12)', title: 'Hospital Management System',       desc: 'Comprehensive hospital administration covering registration, billing, staff management, inventory, departments, and operational workflows.' },
+            { icon: '🩺', bg: 'rgba(21,101,168,.1)',   title: 'OPD & IPD Management',             desc: 'Digitize outpatient and inpatient workflows with appointment scheduling, admissions, bed allocation, treatment tracking, and discharge management.' },
+            { icon: '⏳', bg: 'rgba(253,203,110,.15)', title: 'Queue Management System',          desc: 'Reduce patient waiting times with real-time token generation, queue tracking, and automated patient notifications.' },
+            { icon: '📋', bg: 'rgba(108,92,231,.1)',   title: 'Electronic Medical Records (EMR)', desc: 'Securely maintain patient histories, prescriptions, diagnoses, and treatment records for quick access and better continuity of care.' },
+            { icon: '💊', bg: 'rgba(0,206,201,.1)',    title: 'Integrated Pharmacy & Diagnostics',desc: 'Manage prescriptions, lab investigations, diagnostic reports, and medicine dispensing through a single connected platform.' },
+          ].map(({ icon, bg, title, desc }) => (
             <div key={title} className="benefit-item" style={{
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-              padding: 16, background: 'var(--surface)',
-              border: '1px solid var(--border)', borderRadius: 12, transition: 'all .25s',
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              padding: mob ? '12px 14px' : 16,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              transition: 'all .25s',
             }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, background: bg }}>{icon}</div>
+              <div style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0, background: bg }}>{icon}</div>
               <div>
-                <h4 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{title}</h4>
-                <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.55 }}>{desc}</p>
+                <h4 style={{ fontSize: mob ? 13 : 14, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>{title}</h4>
+                <p style={{ fontSize: mob ? 12 : 12.5, color: 'var(--muted)', lineHeight: 1.55 }}>{desc}</p>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Right — performance metrics card */}
-      <div className="reveal" style={{ transitionDelay: '.15s' }}>
+      {/* Right — sticky metrics card */}
+      <div className="reveal" style={{
+        transitionDelay: '.15s',
+        position: mob ? 'static' : 'sticky',
+        top: 90,
+        alignSelf: 'start',
+      }}>
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 18, padding: 24, boxShadow: '0 20px 60px rgba(10,61,98,.1)',
+          borderRadius: 18, padding: mob ? 18 : 24,
+          boxShadow: '0 20px 60px rgba(10,61,98,.1)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,var(--brand),var(--teal))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>📊</div>
@@ -1461,14 +1438,14 @@ setLoading(true);
           </div>
 
           {[
-            { label: 'Patient Satisfaction', value: '98.2%', width: '98%', color: 'linear-gradient(90deg,var(--teal),var(--teal2))' },
-            { label: 'Queue Efficiency', value: '91%', width: '91%', color: 'linear-gradient(90deg,var(--brand),var(--brand2))' },
-            { label: 'Rural Clinic Uptime', value: '99.9%', width: '99.9%', color: 'linear-gradient(90deg,#6c5ce7,#a29bfe)' },
+            { label: 'Patient Satisfaction', value: '98.2%', width: '98%',   color: 'linear-gradient(90deg,var(--teal),var(--teal2))'   },
+            { label: 'Queue Efficiency',     value: '91%',   width: '91%',   color: 'linear-gradient(90deg,var(--brand),var(--brand2))' },
+            { label: 'Rural Clinic Uptime',  value: '99.9%', width: '99.9%', color: 'linear-gradient(90deg,#6c5ce7,#a29bfe)'            },
           ].map(({ label, value, width, color }) => (
-            <div key={label} style={{ background: 'var(--surface2)', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div key={label} style={{ background: 'var(--surface2)', borderRadius: 12, padding: mob ? 12 : 14, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, color: 'var(--muted)' }}>{label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand2)' }}>{value}</span>
+                <span style={{ fontSize: mob ? 12 : 13, color: 'var(--muted)' }}>{label}</span>
+                <span style={{ fontSize: mob ? 12 : 13, fontWeight: 700, color: 'var(--brand2)' }}>{value}</span>
               </div>
               <div style={{ height: 7, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ width, height: '100%', background: color, borderRadius: 4 }} />
@@ -1476,53 +1453,83 @@ setLoading(true);
             </div>
           ))}
 
-          {/* Mission statement callout */}
+          {/* Mission callout */}
           <div style={{
-            marginTop: 18,
-            padding: '16px 18px',
+            marginTop: 16, padding: '14px 16px',
             background: 'linear-gradient(135deg, rgba(10,61,98,0.06), rgba(0,184,148,0.06))',
-            border: '1px solid rgba(0,184,148,0.2)',
-            borderRadius: 12,
+            border: '1px solid rgba(0,184,148,0.2)', borderRadius: 12,
           }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal)', marginBottom: 6 }}>Our Mission</div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--teal)', marginBottom: 5 }}>Our Mission</div>
+            <p style={{ fontSize: mob ? 12 : 13, color: 'var(--muted)', lineHeight: 1.6 }}>
               Making expert medical care <strong style={{ color: 'var(--text)' }}>accessible, safe, and affordable</strong> —
               bridging the rural‑urban healthcare gap through technology and compassion.
             </p>
           </div>
 
-          {/* Trusted by badge */}
+          {/* Partners badge */}
           <div style={{
-            marginTop: 14, display: 'flex', alignItems: 'center', gap: 10,
-            padding: '12px 14px', background: 'var(--surface2)',
+            marginTop: 12, display: 'flex', alignItems: 'center', gap: 10,
+            padding: '11px 13px', background: 'var(--surface2)',
             border: '1px solid var(--border)', borderRadius: 12,
           }}>
-            <div style={{ fontSize: 22 }}>🤝</div>
+            <div style={{ fontSize: 20 }}>🤝</div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Trusted Partners</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>IIIT Allahabad · United University · AIT Bangkok</div>
+              <div style={{ fontSize: mob ? 12 : 13, fontWeight: 600, color: 'var(--text)' }}>Trusted Partners</div>
+              <div style={{ fontSize: mob ? 11 : 12, color: 'var(--muted)' }}>IIIT Allahabad · United University · AIT Bangkok</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-          {/* ── Founders ── */}
-<div className="reveal" style={{ marginTop: 52 }}>
+
+   <div className="reveal" style={{ marginTop: 52 }}>
+  {/* Header */}
   <div style={{ textAlign: 'center', marginBottom: 28 }}>
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
-      <span style={{ width: 20, height: 2, background: 'var(--teal)', borderRadius: 2, display: 'inline-block' }} />
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        color: 'var(--teal)',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 8,
+      }}
+    >
+      <span
+        style={{
+          width: 20,
+          height: 2,
+          background: 'var(--teal)',
+          borderRadius: 2,
+        }}
+      />
       The Founders
     </div>
-    <h3 style={{ fontFamily: "'Sora', sans-serif", fontSize: mob ? 20 : 26, fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
+
+    <h3
+      style={{
+        fontFamily: "'Sora', sans-serif",
+        fontSize: mob ? 20 : 26,
+        fontWeight: 800,
+        color: 'var(--text)',
+        lineHeight: 1.2,
+      }}
+    >
       Visionaries Behind Curelex
     </h3>
   </div>
 
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: mob ? '1fr' : '1fr 1fr',
-    gap: 20,
-  }}>
+  {/* Cards Grid */}
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+      gap: 20,
+    }}
+  >
     {[
       {
         img: 'Shreyansh Singh.jpeg',
@@ -1530,7 +1537,6 @@ setLoading(true);
         role: 'Founder, Director & CEO',
         bio: 'With a vision to integrate cutting-edge technology into healthcare, Shriyansh leads Curelex to build patient-centric solutions that reach the last mile of rural India.',
         gradient: 'linear-gradient(135deg, #0a3d62, #1565a8)',
-        initials: 'SS',
       },
       {
         img: 'Aman Maurya.jpeg',
@@ -1538,76 +1544,99 @@ setLoading(true);
         role: 'Co-Founder, Director & COO',
         bio: 'Aman oversees seamless delivery of Curelex services. His expertise in healthcare management drives the daily operations and long-term growth of the platform.',
         gradient: 'linear-gradient(135deg, #00b894, #00cec9)',
-        initials: 'AM',
       },
-    ].map(({ img, name, role, bio, gradient, initials }) => (
-      <div key={name} style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--border)',
-        borderRadius: 18,
-        overflow: 'hidden',
-        boxShadow: '0 16px 50px rgba(10,61,98,0.10)',
-        display: 'flex',
-        flexDirection: mob ? 'column' : 'row',
-        alignItems: 'stretch',
-        transition: 'transform 0.25s, box-shadow 0.25s',
+    ].map(({ img, name, role, bio, gradient }) => (
+      <div
+  style={{
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 18,
+    overflow: 'hidden',
+    boxShadow: '0 16px 50px rgba(10,61,98,0.10)',
+    display: 'flex',
+    flexDirection: mob ? 'column' : 'row',
+    transition: 'transform 0.25s, box-shadow 0.25s',
+  }}
+>
+  {/* Image */}
+  <div
+    style={{
+      width: mob ? '100%' : 150,  
+      flexShrink: 0,
+      position: 'relative',
+      height: mob ? 240 : 'auto',
+      minHeight: 200,
+      background: gradient,
+      overflow: 'hidden',
+    }}
+  >
+    <img
+      src={img}
+      alt={name}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        objectPosition: 'center top',
+        position: 'absolute',
+        inset: 0,
+        transform: 'scale(1.05)',
       }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 24px 60px rgba(10,61,98,0.18)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 16px 50px rgba(10,61,98,0.10)'; }}
-      >
-        {/* Photo */}
-        <div style={{
-          width: mob ? '100%' : 180,
-          flexShrink: 0,
-          position: 'relative',
-          minHeight: mob ? 220 : 'auto',
-          background: gradient,
-          overflow: 'hidden'
-        }}>
-          <img
-            src={img}
-            alt={name}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center top',
-              display: 'block',
-              transform: 'scale(1.15)',
-            }}
-            onError={e => { e.currentTarget.style.display = 'none'; }}
-          />
-          {/* Fallback initials shown if image fails */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: "'Sora', sans-serif", fontSize: 32, fontWeight: 800,
-            color: '#fff', zIndex: -1,
-          }}>{initials}</div>
-        </div>
+      onError={(e) => {
+        e.currentTarget.style.display = 'none';
+      }}
+    />
+  </div>
 
-        {/* Text */}
-        <div style={{ padding: '22px 22px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-          {/* Role badge */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: 'linear-gradient(135deg, rgba(10,61,98,0.06), rgba(0,184,148,0.06))',
-            border: '1px solid rgba(0,184,148,0.2)',
-            borderRadius: 20, padding: '3px 12px',
-            fontSize: 11, fontWeight: 600, color: 'var(--teal)',
-            alignSelf: 'flex-start',
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} />
-            {role}
-          </div>
-          <div style={{ fontFamily: "'Sora', sans-serif", fontSize: mob ? 17 : 19, fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
-            {name}
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.65, fontWeight: 300 }}>
-            {bio}
-          </p>
-        </div>
-      </div>
+  {/* Text */}
+  <div
+    style={{
+      padding: mob ? '18px' : '22px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      gap: 10,
+      flex: 1,
+    }}
+  >
+    {/* role */}
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--teal)',
+      }}
+    >
+      {role}
+    </div>
+
+    {/* name */}
+    <div
+      style={{
+        fontFamily: "'Sora', sans-serif",
+        fontSize: mob ? 17 : 19,
+        fontWeight: 800,
+      }}
+    >
+      {name}
+    </div>
+
+    {/* bio */}
+    <p
+      style={{
+        fontSize: 13,
+        color: 'var(--muted)',
+        lineHeight: 1.6,
+        margin: 0,
+      }}
+    >
+      {bio}
+    </p>
+  </div>
+</div>
     ))}
   </div>
 </div>
