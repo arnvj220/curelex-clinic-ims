@@ -1319,49 +1319,27 @@ setLoading(true);
 
     {/* ── Two images row ── */}
     <div className="reveal" style={{
-      display: 'grid',
-      gridTemplateColumns: mob ? '1fr' : '1fr 1fr',
-      gap: 20,
+      display: 'flex',
+      justifyContent: 'center',
       marginBottom: 52,
     }}>
 
-      {/* Image 1 — clinic photo */}
-      <div style={{
-        borderRadius: 18,
-        overflow: 'hidden',
-        boxShadow: '0 16px 50px rgba(10,61,98,0.13)',
-        border: '1px solid var(--border)',
-        position: 'relative',
-        aspectRatio: '16/9',
-        minHeight: mob ? 200 : 'auto',
-      }}>
-        <img
-          src="https://customer-assets.emergentagent.com/job_6e68eb4a-87bb-42e9-9164-dba3203a7aaf/artifacts/kpuz7ysv_WhatsApp1.jpeg"
-          alt="Curelex Telemedicine Clinic"
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
-        />
-        <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0,
-          background: 'linear-gradient(to top, rgba(10,61,98,0.78) 0%, transparent 100%)',
-          padding: mob ? '16px 14px 14px' : '20px 18px 16px',
-        }}>
-          <div style={{ color: '#fff', fontWeight: 700, fontSize: mob ? 13 : 14 }}>Our E-Clinic in Action</div>
-          <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: mob ? 11 : 12, marginTop: 2 }}>Telemedicine reaching rural communities</div>
-        </div>
-      </div>
 
-      {/* Image 2 — team / outreach */}
+      
 <div
+
   style={{
     borderRadius: 18,
     overflow: 'hidden',
     boxShadow: '0 16px 50px rgba(10,61,98,0.13)',
     border: '1px solid var(--border)',
     aspectRatio: '16/9',
+    maxHeight: '300px',
+    
   }}
 >
   <img
-    src="/about_img_2.png"  // replace with your image path or URL
+    src="/about_img_2.png" 
     alt="Team / Outreach"
     style={{
       width: '100%',
